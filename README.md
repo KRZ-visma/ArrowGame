@@ -10,16 +10,27 @@ After Pages is enabled for this repo:
 
 ## Local
 
-Open `index.html` in a browser, or:
+Serve over HTTP (ES modules will not load from `file://`):
 
 ```bash
 python3 -m http.server 8080
 ```
 
+Then open `http://localhost:8080`.
+
 ## Files
 
-- `index.html` — tiny shell that loads the game
-- `game.js` — entire game (UI, styles, levels, logic)
+- `index.html` — shell (`viewport-fit=cover`, module entry)
+- `game.js` — UI, styles, canvas, input
+- `js/logic.js` — escape / occupancy rules
+- `js/levels.js` — tutorial, hand pack, seeded generator
+- `js/progress.js` — `localStorage` + undo snapshots
+
+## Tests
+
+```bash
+npm test
+```
 
 ## Controls
 

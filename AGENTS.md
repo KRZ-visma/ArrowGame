@@ -2,37 +2,36 @@
 
 ## Project
 
-Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its tip direction when the path is clear. Progress is saved in `localStorage`. Live via GitHub Pages from `main` (root). No backend, no build step required to play.
+Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its tip direction when the path is clear. Progress is saved in `localStorage`. Live via GitHub Pages from `main` (root). No backend, no build step required to play (serve over HTTP so ES modules load — `file://` will not work).
 
 ## Stack (keep it this way)
 
 - Vanilla HTML / CSS / JS — no framework, bundler, or TypeScript unless explicitly requested
-- Prefer native ES modules (`type="module"`) when splitting files — no bundler
+- Native ES modules (`type="module"`) — no bundler
 - Storage key: `arrow-out-level` (do not break without a migration)
 - UI copy language: **English**
+- Unit tests: Node’s built-in test runner (`npm test` → `node --test test/`)
 
 ## Files (by domain)
 
-Today most code still lives in a single `game.js`. **When a feature grows, prefer splitting into modules** by domain (like the table below) rather than growing one mega-file. Touch only the relevant module(s) for a feature.
-
-| Domain | Suggested JS | Notes / tests |
+| Domain | File(s) | Notes / tests |
 | --- | --- | --- |
-| Shell / markup / injected CSS | `index.html`, styles module or `styles.css` | Keep brand + atmosphere; no dashboard clutter |
-| Level data & generation | `js/levels.js` (or extract from `game.js`) | Tutorial, hand levels, seeded generator — **unit tests** |
-| Escape / occupancy / move rules | `js/logic.js` | `canEscape`, path blocking — **unit tests** |
-| Session state / undo / progress | `js/state.js` | History stack, `localStorage` — **unit tests** where pure |
-| Canvas render & animation | `js/render.js` | Drawing, slide/shake animation |
-| Input / HUD / overlay wire-up | `js/main.js` or `js/ui.js` | Pointer, buttons, keyboard |
-| Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js` (update if paths change) |
+| Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
+| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD, pointer/keyboard |
+| Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy — **unit tests** |
+| Level data & generation | `js/levels.js` | Tutorial, hand levels, seeded generator — **unit tests** |
+| Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON — **unit tests** |
+| Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
+| CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
 
-Entry today: `index.html` → `game.js`. After a split, update `index.html` (and the Pages workflow file list) accordingly. Until split, edit the matching section inside `game.js` and still add unit tests for pure logic you change.
+Touch only the relevant module(s) for a feature. Prefer extending these modules over growing unrelated logic back into `game.js`.
 
 ## Design
 
 - Keep the existing visual system (Archivo Black + DM Sans, `.atmosphere`, brand-first **ARROW OUT**)
 - No generic AI look (purple gradients, cream + terracotta, broadsheet)
 - One job per section; board is the hero — no card clutter in the play surface
-- **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
+- **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
 
 ## Workflow
 
@@ -50,8 +49,8 @@ Entry today: `index.html` → `game.js`. After a split, update `index.html` (and
 ### Execution (after approval)
 
 1. Small, focused diffs — only what the task asks; **one feature ≈ one domain module** when possible
-2. Changes to level generation, escape rules, undo, or progress → add or update **unit tests** (not Playwright/UI tests). Prefer a lightweight Node test runner (e.g. Node’s built-in test runner or a minimal harness) that can import pure logic without a browser
-3. Before merge: unit tests must **pass** locally; if a CI unit-test workflow exists, it must be green
+2. Changes to level generation, escape rules, undo, or progress → add or update **unit tests** (not Playwright/UI tests). Use `npm test` (Node’s built-in runner) so pure logic imports without a browser
+3. Before merge: unit tests must **pass** locally; the unit-test workflow must be green
 4. UI / canvas / controls changes: verify on **iPhone 16 Pro**-sized viewport (≈ 393×852, DPR 3) — layout, touch, safe areas; note briefly in the PR that this was checked
 5. Do not add secrets, analytics, or external APIs without asking
 6. Commits/PRs short and clear; UI copy always English
@@ -64,7 +63,7 @@ Entry today: `index.html` → `game.js`. After a split, update `index.html` (and
 
 - Change code without a prior idea and explicit approval (“ja bouwen” etc.), unless an exception above applies
 - Add dependencies or a bundler “for later”
-- Grow `game.js` further when the change clearly belongs in a new module — split instead
+- Dump new domain logic into `game.js` when it belongs in `js/logic.js`, `js/levels.js`, or `js/progress.js`
 - Silently change the localStorage schema
 - Overhaul hero/layout for a bugfix or small feature
 - Merge while required checks are failing or still running
