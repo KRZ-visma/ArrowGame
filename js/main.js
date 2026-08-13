@@ -383,7 +383,7 @@ function drawArrow(arrow) {
   if (blockedShake) stroke = "#ff5a3c";
   else if (hovering && free) stroke = "#e8ff47";
   else if (hovering) stroke = "#ffffff";
-  else if (free) stroke = "#dfe6c8";
+  else if (free) stroke = "#c8e86a";
 
   const width = Math.max(2.5, state.cell * 0.18);
   ctx.save();
