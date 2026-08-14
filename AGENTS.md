@@ -2,7 +2,7 @@
 
 ## Project
 
-Browser-only arrow-escape puzzle: tap an arrow to slide it off the board when the path is clear. The painted tip follows the last body segment and may differ from the crawl/exit `dir`. Progress is saved in `localStorage`. Live via GitHub Pages from `main` (root). No backend, no build step required to play (serve over HTTP so ES modules load — `file://` will not work).
+Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its tip direction when the path is clear. Progress is saved in `localStorage`. Live via GitHub Pages from `main` (root). No backend, no build step required to play (serve over HTTP so ES modules load — `file://` will not work).
 
 ## Stack (keep it this way)
 
@@ -20,9 +20,9 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board when th
 | Domain | File(s) | Notes / tests |
 | --- | --- | --- |
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
-| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD (level + chances), end splash (win/fail + stars), All levels overlay, Menu overlay, pointer/keyboard; chevron uses `headingDelta` (last body segment), not crawl `dir` |
-| Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` (greedy clear is enough — leaving only frees cells), `headingDelta` for the painted tip — **unit tests** |
-| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places winding multi-cell puzzle arrows via `growWindingPath` (bends, U-turns, multi-turn curls; tails in center zone) then `pickSlideDir` assigns crawl `dir` (often **not** the last segment) then `fillEmptyCells` fills remaining **center** cells (prefer a 3-cell L, then length 2, allow length 1; edges may stay empty; filler `dir` often mismatches the tip); `repairToSolvable` then reorients leftover deadlocks by flipping crawl dir first, then reversing a snake if needed (new tail can sit on an edge; at least one endpoint stays in the center); TUTORIAL is built via `buildTutorial()` and includes an L-shape — **unit tests** |
+| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD (level + chances), end splash (win/fail + stars), All levels overlay, Menu overlay, pointer/keyboard |
+| Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` (greedy clear is enough — leaving only frees cells) — **unit tests** |
+| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places winding multi-cell puzzle arrows via `growWindingPath` (bends, U-turns, multi-turn curls; last segment matches exit dir; tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer a 3-cell L, then length 2, allow length 1; edges may stay empty); `repairToSolvable` then reorients leftover deadlocks (`fillEmptyCells` does not check escape, so two fillers can face each other); repair may reverse a snake (new tail can sit on an edge; at least one endpoint stays in the center); TUTORIAL is built via `buildTutorial()` and includes an L-shape — **unit tests** |
 | Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress`, star records, skip quota (`MAX_SKIPS` / `skipLevel` / `canSkipLevel`), `starsForClear` / `MAX_STRIKES` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
@@ -101,5 +101,4 @@ When a pull request surfaces something future agents should know, add a small, c
 - Merge while required checks are failing or still running
 - Add Playwright/e2e UI tests by default — use **unit tests** for puzzle logic instead
 - Ship a `LEVEL_PACK` entry that `isSolvable` rejects — `fillEmptyCells` can deadlock (facing fillers); `repairToSolvable` must run after fill, and `generate-levels` must fail the run if a level stays stuck
-- Place a winding arrow whose head crawls into its own body — `canEscapePath` rejects tight inward spirals
-- Assume the painted tip is the leave direction — `dir` is the crawl/exit heading; the chevron follows the last body segment via `headingDelta` and is often different
+- Place a winding arrow whose head crawls into its own body — `canEscapePath` rejects tight inward spirals; U-turns must end traveling in the exit dir (walk opposite, jog, then out)

@@ -15,7 +15,6 @@ import {
   pathStepDirs,
   countPathTurns,
   pathHasReversal,
-  headingDelta,
 } from "../js/logic.js";
 
 describe("dirBetween / path turns", () => {
@@ -78,29 +77,6 @@ describe("dirBetween / path turns", () => {
       ]),
       ["S"],
     );
-  });
-});
-
-describe("headingDelta", () => {
-  it("follows the last body segment", () => {
-    assert.deepEqual(
-      headingDelta(
-        [
-          [0, 1],
-          [0, 0],
-          [1, 0],
-        ],
-        "S",
-      ),
-      { x: 1, y: 0 },
-    );
-    assert.deepEqual(headingDelta([{ x: 2, y: 2 }, { x: 2, y: 1 }], "E"), { x: 0, y: -1 });
-  });
-
-  it("uses the crawl dir when there is no tip segment", () => {
-    assert.deepEqual(headingDelta([[3, 3]], "W"), { x: -1, y: 0 });
-    assert.deepEqual(headingDelta([[1, 1], [1, 1]], "S"), { x: 0, y: 1 });
-    assert.deepEqual(headingDelta([], "Q"), { x: 1, y: 0 });
   });
 });
 

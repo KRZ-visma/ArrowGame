@@ -265,70 +265,21 @@ function realizeCurl(start, exitDir, size, occupied, rng, budget) {
   return null;
 }
 
-function shuffledDirs(rng) {
-  const dirs = [...DIRS];
-  for (let i = dirs.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1));
-    const tmp = dirs[i];
-    dirs[i] = dirs[j];
-    dirs[j] = tmp;
-  }
-  return dirs;
-}
-
-/**
- * Crawl/exit dir for a polyline. Prefers a heading that is not the painted tip
- * (last segment) when that still `canEscapePath`.
- *
- * @param {number[][]} path
- * @param {number} size
- * @param {Set<string>} occupied
- * @param {() => number} rng
- * @returns {import("./logic.js").Dir | null}
- */
-export function pickSlideDir(path, size, occupied, rng) {
-  const last = path.length >= 2 ? dirBetween(path[path.length - 2], path[path.length - 1]) : null;
-  const preferMismatch = rng() < 0.7;
-  const dirs = shuffledDirs(rng);
-  const mismatch = dirs.filter((d) => d !== last);
-  const match = dirs.filter((d) => d === last);
-  const ordered = preferMismatch ? mismatch.concat(match) : match.concat(mismatch);
-  for (const dir of ordered) {
-    if (canEscapePath(path, dir, size, occupied)) return dir;
-  }
-  return null;
-}
-
-/**
- * Filler crawl dir: often not the last segment. Length-1 has no tip segment.
- * @param {number[][]} path
- * @param {() => number} rng
- * @returns {import("./logic.js").Dir}
- */
-function fillerDir(path, rng) {
-  if (path.length < 2) return DIRS[Math.floor(rng() * 4)];
-  const last = dirBetween(path[path.length - 2], path[path.length - 1]);
-  if (last && rng() < 0.4) return last;
-  const others = DIRS.filter((d) => d !== last);
-  return others[Math.floor(rng() * others.length)];
-}
-
 const SHAPE_FALLBACK = /** @type {const} */ (["curl", "uturn", "bent", "straight"]);
 
 /**
- * Grow a tail→head polyline. `biasDir` is a recipe axis (U-turn opening, etc.),
- * not the crawl/exit dir — the painted tip follows the last segment and may
- * differ from how the snake later leaves.
+ * Grow a tail→head polyline that ends traveling in `exitDir`.
+ * Prefers curled / angled bodies; U-turns walk opposite, jog, then out.
  *
  * @param {number[]} start
- * @param {import("./logic.js").Dir} biasDir
+ * @param {import("./logic.js").Dir} exitDir
  * @param {number} size
  * @param {Set<string>} occupied
  * @param {() => number} rng
  * @param {"curl" | "uturn" | "bent" | "straight"} [shape]
  * @returns {number[][] | null}
  */
-export function growWindingPath(start, biasDir, size, occupied, rng, shape) {
+export function growWindingPath(start, exitDir, size, occupied, rng, shape) {
   const budget = pathBudget(size, rng);
   const preferred = shape || chooseArrowShape(rng, budget);
   /** @type {Array<"curl" | "uturn" | "bent" | "straight">} */
@@ -338,10 +289,10 @@ export function growWindingPath(start, biasDir, size, occupied, rng, shape) {
   }
   for (const kind of order) {
     let path = null;
-    if (kind === "curl") path = realizeCurl(start, biasDir, size, occupied, rng, budget);
-    else if (kind === "uturn") path = realizeUTurn(start, biasDir, size, occupied, rng, budget);
-    else if (kind === "bent") path = realizeBent(start, biasDir, size, occupied, rng, budget);
-    else path = realizeStraight(start, biasDir, size, occupied, budget);
+    if (kind === "curl") path = realizeCurl(start, exitDir, size, occupied, rng, budget);
+    else if (kind === "uturn") path = realizeUTurn(start, exitDir, size, occupied, rng, budget);
+    else if (kind === "bent") path = realizeBent(start, exitDir, size, occupied, rng, budget);
+    else path = realizeStraight(start, exitDir, size, occupied, budget);
     if (path && path.length >= 2) return path;
   }
   return null;
@@ -364,7 +315,7 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
   let attempts = 0;
   while (placed.length < count && attempts < count * 180) {
     attempts += 1;
-    const bias = DIRS[Math.floor(rng() * 4)];
+    const dir = DIRS[Math.floor(rng() * 4)];
 
     const starts = [];
     for (let y = margin; y < size - margin; y++) {
@@ -375,11 +326,10 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
     if (starts.length === 0) continue;
 
     const start = starts[Math.floor(rng() * starts.length)];
-    const path = growWindingPath(start, bias, size, occupied, rng);
+    const path = growWindingPath(start, dir, size, occupied, rng);
     if (!path) continue;
 
-    const dir = pickSlideDir(path, size, occupied, rng);
-    if (!dir) continue;
+    if (!canEscapePath(path, dir, size, occupied)) continue;
 
     for (const [px, py] of path) occupied.add(cellKey(px, py));
     placed.push({ dir, path });
@@ -430,8 +380,7 @@ function fillEmptyCells(size, occupied, placed, rng) {
             occupied.add(key);
             occupied.add(cellKey(x1, y1));
             occupied.add(cellKey(x2, y2));
-            const path = [[x, y], [x1, y1], [x2, y2]];
-            placed.push({ dir: fillerDir(path, rng), path });
+            placed.push({ dir: d2, path: [[x, y], [x1, y1], [x2, y2]] });
             placedHere = true;
             break;
           }
@@ -449,8 +398,7 @@ function fillEmptyCells(size, occupied, placed, rng) {
         if (nx >= 0 && ny >= 0 && nx < size && ny < size && !occupied.has(cellKey(nx, ny))) {
           occupied.add(key);
           occupied.add(cellKey(nx, ny));
-          const path = [[x, y], [nx, ny]];
-          placed.push({ dir: fillerDir(path, rng), path });
+          placed.push({ dir, path: [[x, y], [nx, ny]] });
           placedHere = true;
           break;
         }
@@ -466,21 +414,24 @@ function fillEmptyCells(size, occupied, placed, rng) {
 }
 
 /**
- * Flip crawl `dir` (tip stays on the last segment), or reverse a multi-cell snake.
+ * Flip a length-1 dir, or reverse a multi-cell snake, so it can leave `stuck`.
  * @param {{ dir: string, path: number[][] }} arrow
  * @param {number} size
  * @param {Array<{ dir: string, path: number[][] }>} stuck
  */
 function reorientStuckArrow(arrow, size, stuck) {
-  const prevDir = arrow.dir;
-  for (const dir of DIRS) {
-    if (dir === prevDir) continue;
-    arrow.dir = dir;
-    if (canEscapeAmong(arrow, size, stuck)) return true;
+  if (arrow.path.length === 1) {
+    const prev = arrow.dir;
+    for (const dir of DIRS) {
+      if (dir === prev) continue;
+      arrow.dir = dir;
+      if (canEscapeAmong(arrow, size, stuck)) return true;
+    }
+    arrow.dir = prev;
+    return false;
   }
-  arrow.dir = prevDir;
-  if (arrow.path.length === 1) return false;
   const prevPath = arrow.path;
+  const prevDir = arrow.dir;
   const rev = prevPath.slice().reverse();
   const ndir = dirBetween(rev[rev.length - 2], rev[rev.length - 1]);
   if (!ndir) return false;
