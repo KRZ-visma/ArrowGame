@@ -878,8 +878,8 @@ function showWinSplash(stars) {
   endStars.hidden = false;
   btnEndSkip.hidden = true;
   endCopy.textContent = last
-    ? `That's the last level. Up next: Level ${nextNumber}.`
-    : `Up next: Level ${nextNumber}.`;
+    ? "That's the last one in the pack."
+    : "Every arrow found its way out.";
   btnEndPrimary.textContent = `Next — Level ${nextNumber}`;
   endOverlay.hidden = false;
 }
@@ -888,10 +888,9 @@ function showFailSplash() {
   state.endMode = "fail";
   endCard.classList.add("is-fail");
   endKicker.textContent = "Failed";
-  endTitle.textContent = "Level failed";
+  endTitle.textContent = "Out of chances";
   endStars.hidden = true;
-  endCopy.textContent =
-    "You failed to complete the level. Three arrows could not move — reset to try again.";
+  endCopy.textContent = "Three arrows could not move.";
   btnEndPrimary.textContent = "Reset";
   refreshSkipButtons();
   endOverlay.hidden = false;
