@@ -25,6 +25,13 @@ import {
   isLevelUnlocked,
   nextLevelIndex,
   levelSelectItems,
+  MAX_SKIPS,
+  normalizeSkipped,
+  skippedLevels,
+  skipsRemaining,
+  isLevelSkipped,
+  canSkipLevel,
+  skipLevel,
 } from "../js/progress.js";
 
 describe("progress storage", () => {
@@ -88,6 +95,7 @@ describe("menu stats", () => {
         arrowsTotal: 3,
         levelsCleared: 4,
         chances: MAX_STRIKES,
+        skipsLeft: MAX_SKIPS,
       },
     );
   });
@@ -104,6 +112,7 @@ describe("menu stats", () => {
     assert.equal(stats.arrowsRemaining, 0);
     assert.equal(stats.levelsCleared, 1);
     assert.equal(stats.chances, MAX_STRIKES);
+    assert.equal(stats.skipsLeft, MAX_SKIPS);
   });
 
   it("reports remaining chances from strikes", () => {
@@ -115,6 +124,19 @@ describe("menu stats", () => {
       strikes: 2,
     });
     assert.equal(stats.chances, 1);
+  });
+
+  it("clamps skip slots to 0–MAX_SKIPS", () => {
+    const base = {
+      levelIndex: 0,
+      moves: 0,
+      arrows: [{ state: "idle" }],
+      packSize: 10,
+    };
+    assert.equal(menuStats({ ...base, skipsLeft: 2 }).skipsLeft, 2);
+    assert.equal(menuStats({ ...base, skipsLeft: -4 }).skipsLeft, 0);
+    assert.equal(menuStats({ ...base, skipsLeft: 9 }).skipsLeft, MAX_SKIPS);
+    assert.equal(menuStats({ ...base, skipsLeft: NaN }).skipsLeft, MAX_SKIPS);
   });
 });
 
@@ -149,14 +171,23 @@ describe("strikes and stars", () => {
 });
 
 describe("star records", () => {
-  it("round-trips best stars and unlocked index", () => {
-    const raw = serializeStarRecords({ best: { 0: 3, 2: 1 }, unlocked: 4 });
-    assert.deepEqual(JSON.parse(raw), { best: { 0: 3, 2: 1 }, unlocked: 4 });
+  it("round-trips best stars, unlocked index, and skipped levels", () => {
+    const raw = serializeStarRecords({
+      best: { 0: 3, 2: 1 },
+      unlocked: 4,
+      skipped: [3, 1],
+    });
+    assert.deepEqual(JSON.parse(raw), {
+      best: { 0: 3, 2: 1 },
+      unlocked: 4,
+      skipped: [1, 3],
+    });
     const parsed = parseStarRecords(raw);
     assert.equal(starsForLevel(parsed, 0), 3);
     assert.equal(starsForLevel(parsed, 1), 0);
     assert.equal(starsForLevel(parsed, 2), 1);
     assert.equal(parsed.unlocked, 4);
+    assert.deepEqual(parsed.skipped, [1, 3]);
   });
 
   it("returns empty records for missing or junk payloads", () => {
@@ -184,23 +215,30 @@ describe("star records", () => {
     assert.deepEqual(parseStarRecords(JSON.stringify({ unlocked: 2 })), {
       best: {},
       unlocked: 2,
+      skipped: [],
     });
     assert.deepEqual(parseStarRecords(JSON.stringify({ best: [3], unlocked: 1 })), {
       best: {},
       unlocked: 1,
+      skipped: [],
     });
     assert.deepEqual(parseStarRecords(JSON.stringify({ best: null, unlocked: "x" })), {
       best: {},
       unlocked: 0,
+      skipped: [],
     });
   });
 
   it("serializes missing records as empty and ignores array best", () => {
-    assert.equal(serializeStarRecords(null), JSON.stringify({ best: {}, unlocked: 0 }));
-    assert.equal(serializeStarRecords(undefined), JSON.stringify({ best: {}, unlocked: 0 }));
+    assert.equal(serializeStarRecords(null), JSON.stringify({ best: {}, unlocked: 0, skipped: [] }));
+    assert.equal(serializeStarRecords(undefined), JSON.stringify({ best: {}, unlocked: 0, skipped: [] }));
     assert.equal(
       serializeStarRecords({ best: [1], unlocked: -3 }),
-      JSON.stringify({ best: {}, unlocked: 0 }),
+      JSON.stringify({ best: {}, unlocked: 0, skipped: [] }),
+    );
+    assert.equal(
+      serializeStarRecords({ best: { 1: 2 }, unlocked: 2, skipped: [1, 3, 1] }),
+      JSON.stringify({ best: { 1: 2 }, unlocked: 2, skipped: [3] }),
     );
   });
 
@@ -216,12 +254,14 @@ describe("star records", () => {
     rec = recordLevelStars(rec, 2.7, 9);
     assert.equal(starsForLevel(rec, 2), 3);
     assert.equal(rec.unlocked, 3);
+    assert.deepEqual(rec.skipped, []);
   });
 
-  it("unlocks a jumped-to index without clearing stars", () => {
-    const rec = withUnlocked({ best: { 0: 2 }, unlocked: 1 }, 6);
+  it("unlocks a jumped-to index without clearing stars or skips", () => {
+    const rec = withUnlocked({ best: { 0: 2 }, unlocked: 1, skipped: [1] }, 6);
     assert.equal(rec.best[0], 2);
     assert.equal(rec.unlocked, 6);
+    assert.deepEqual(rec.skipped, [1]);
     assert.equal(withUnlocked(rec, -4).unlocked, 6);
     assert.equal(withUnlocked(emptyStarRecords(), NaN).unlocked, 0);
   });
@@ -244,13 +284,103 @@ describe("star records", () => {
   it("builds level-select rows with stars and lock state", () => {
     const rec = { best: { 0: 3, 1: 1 }, unlocked: 2 };
     assert.deepEqual(levelSelectItems(rec, 4), [
-      { index: 0, number: 1, stars: 3, unlocked: true, completed: true },
-      { index: 1, number: 2, stars: 1, unlocked: true, completed: true },
-      { index: 2, number: 3, stars: 0, unlocked: true, completed: false },
-      { index: 3, number: 4, stars: 0, unlocked: false, completed: false },
+      { index: 0, number: 1, stars: 3, unlocked: true, completed: true, skipped: false },
+      { index: 1, number: 2, stars: 1, unlocked: true, completed: true, skipped: false },
+      { index: 2, number: 3, stars: 0, unlocked: true, completed: false, skipped: false },
+      { index: 3, number: 4, stars: 0, unlocked: false, completed: false, skipped: false },
     ]);
     assert.deepEqual(levelSelectItems(rec, -2), []);
     assert.deepEqual(levelSelectItems(rec, NaN), []);
+  });
+});
+
+describe("level skips", () => {
+  it("starts with a full skip quota", () => {
+    assert.equal(MAX_SKIPS, 3);
+    const rec = emptyStarRecords();
+    assert.deepEqual(skippedLevels(rec), []);
+    assert.equal(skipsRemaining(rec), MAX_SKIPS);
+    assert.equal(canSkipLevel(rec, 0), true);
+    assert.equal(isLevelSkipped(rec, 0), false);
+  });
+
+  it("drops junk, completed, and extra skipped indices", () => {
+    assert.deepEqual(normalizeSkipped(null), []);
+    assert.deepEqual(normalizeSkipped("1"), []);
+    assert.deepEqual(
+      normalizeSkipped([-1, 2, 2, "3", "nope", 1.9, 4, 5], { 2: 3 }),
+      [1, 3, 4],
+    );
+  });
+
+  it("treats missing skipped as empty and rejects invalid skip targets", () => {
+    assert.deepEqual(skippedLevels({}), []);
+    assert.equal(isLevelSkipped({ skipped: [1] }, NaN), false);
+    assert.equal(canSkipLevel(emptyStarRecords(), -1), false);
+    assert.equal(canSkipLevel(emptyStarRecords(), NaN), false);
+    assert.equal(canSkipLevel({ best: { 0: 2 }, skipped: [] }, 0), false);
+  });
+
+  it("skips an uncleared level, unlocks the next, and spends a slot", () => {
+    let rec = emptyStarRecords();
+    rec = skipLevel(rec, 0, 10);
+    assert.deepEqual(rec.skipped, [0]);
+    assert.equal(rec.unlocked, 1);
+    assert.equal(skipsRemaining(rec), 2);
+    assert.equal(canSkipLevel(rec, 0), false);
+    assert.equal(isLevelSkipped(rec, 0), true);
+    rec = skipLevel(rec, 1, 10);
+    rec = skipLevel(rec, 2, 10);
+    assert.deepEqual(rec.skipped, [0, 1, 2]);
+    assert.equal(rec.unlocked, 3);
+    assert.equal(skipsRemaining(rec), 0);
+    assert.equal(canSkipLevel(rec, 3), false);
+  });
+
+  it("does not spend a skip when the level is already skipped or the quota is empty", () => {
+    const full = { best: {}, unlocked: 3, skipped: [0, 1, 2] };
+    assert.deepEqual(skipLevel(full, 0, 10), full);
+    assert.deepEqual(skipLevel(full, 3, 10).skipped, [0, 1, 2]);
+    const cleared = { best: { 4: 1 }, unlocked: 5, skipped: [] };
+    assert.deepEqual(skipLevel(cleared, 4, 10).skipped, []);
+    assert.equal(skipLevel(cleared, 4, 10).unlocked, 5);
+  });
+
+  it("restores a skip slot when a skipped level is cleared", () => {
+    let rec = skipLevel(emptyStarRecords(), 0, 10);
+    rec = skipLevel(rec, 1, 10);
+    rec = skipLevel(rec, 2, 10);
+    assert.equal(skipsRemaining(rec), 0);
+    rec = recordLevelStars(rec, 1, 2);
+    assert.deepEqual(rec.skipped, [0, 2]);
+    assert.equal(starsForLevel(rec, 1), 2);
+    assert.equal(skipsRemaining(rec), 1);
+    assert.equal(canSkipLevel(rec, 3), true);
+    rec = skipLevel(rec, 3, 10);
+    assert.deepEqual(rec.skipped, [0, 2, 3]);
+    assert.equal(skipsRemaining(rec), 0);
+  });
+
+  it("skips the last pack level without wrapping unlocked backward", () => {
+    const rec = skipLevel({ best: {}, unlocked: 9, skipped: [] }, 9, 10);
+    assert.deepEqual(rec.skipped, [9]);
+    assert.equal(rec.unlocked, 9);
+    assert.equal(nextLevelIndex(9, 10), 0);
+  });
+
+  it("marks skipped rows in level select", () => {
+    const rec = { best: { 0: 3 }, unlocked: 2, skipped: [1] };
+    assert.deepEqual(levelSelectItems(rec, 3), [
+      { index: 0, number: 1, stars: 3, unlocked: true, completed: true, skipped: false },
+      { index: 1, number: 2, stars: 0, unlocked: true, completed: false, skipped: true },
+      { index: 2, number: 3, stars: 0, unlocked: true, completed: false, skipped: false },
+    ]);
+  });
+
+  it("parses legacy star JSON without skipped as an empty list", () => {
+    const parsed = parseStarRecords(JSON.stringify({ best: { 0: 1 }, unlocked: 1 }));
+    assert.deepEqual(parsed.skipped, []);
+    assert.equal(skipsRemaining(parsed), MAX_SKIPS);
   });
 });
 

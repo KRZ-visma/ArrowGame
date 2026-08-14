@@ -1,7 +1,7 @@
 /** Persisted level index — do not rename without a migration. */
 export const STORAGE_KEY = "arrow-out-level";
 
-/** Best stars per level + furthest unlocked index. Additive; do not reuse STORAGE_KEY. */
+/** Best stars per level + furthest unlocked index + outstanding skips. Additive; do not reuse STORAGE_KEY. */
 export const STARS_KEY = "arrow-out-stars";
 
 /** Keys owned by the game. Clear-all removes every entry here. */
@@ -9,6 +9,9 @@ export const STORAGE_KEYS = Object.freeze([STORAGE_KEY, STARS_KEY]);
 
 /** Blocked taps that fail the run. */
 export const MAX_STRIKES = 3;
+
+/** Outstanding skipped (uncleared) levels allowed at once. Completing one restores a skip. */
+export const MAX_SKIPS = 3;
 
 /** Extra taps over par that still earn 2 stars. 3+ extras (or 3 strikes) cannot clear. */
 export const STAR_EXTRA_FOR_TWO = 1;
@@ -28,6 +31,7 @@ export function clearAllProgress(storage) {
  * Numbers for the Menu overlay. `levelNumber` is 1-based.
  * `levelsCleared` counts finished levels; include the current one when `won`.
  * `chances` is remaining blocked-tap lives this run.
+ * `skipsLeft` is remaining skip slots (max 3 outstanding uncleared skips).
  * @param {{
  *   levelIndex: number,
  *   moves: number,
@@ -35,6 +39,7 @@ export function clearAllProgress(storage) {
  *   packSize: number,
  *   won?: boolean,
  *   strikes?: number,
+ *   skipsLeft?: number,
  * }} input
  */
 export function menuStats({
@@ -44,6 +49,7 @@ export function menuStats({
   packSize,
   won = false,
   strikes = 0,
+  skipsLeft = MAX_SKIPS,
 }) {
   const arrowsTotal = arrows.length;
   const arrowsRemaining = arrows.filter((a) => a.state !== "gone").length;
@@ -55,6 +61,7 @@ export function menuStats({
     arrowsTotal,
     levelsCleared: levelIndex + (won ? 1 : 0),
     chances: chancesLeft(strikes),
+    skipsLeft: clampSkipsLeft(skipsLeft),
   };
 }
 
@@ -95,14 +102,46 @@ export function chancesLeft(strikes) {
   return Math.max(0, MAX_STRIKES - Math.max(0, n));
 }
 
-/** @returns {{ best: Record<number, number>, unlocked: number }} */
+/**
+ * @param {unknown} value
+ */
+function clampSkipsLeft(value) {
+  const n = Number.isFinite(value) ? Math.floor(value) : MAX_SKIPS;
+  return Math.max(0, Math.min(MAX_SKIPS, n));
+}
+
+/**
+ * Unique, sorted, incomplete indices, capped at MAX_SKIPS.
+ * @param {unknown} raw
+ * @param {Record<number, number>} best
+ * @returns {number[]}
+ */
+export function normalizeSkipped(raw, best = {}) {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set();
+  /** @type {number[]} */
+  const out = [];
+  for (const item of raw) {
+    const i = Math.floor(Number(item));
+    if (!Number.isFinite(i) || i < 0) continue;
+    if (seen.has(i)) continue;
+    const stars = best[i];
+    if (Number.isFinite(stars) && stars > 0) continue;
+    seen.add(i);
+    out.push(i);
+  }
+  out.sort((a, b) => a - b);
+  return out.slice(0, MAX_SKIPS);
+}
+
+/** @returns {{ best: Record<number, number>, unlocked: number, skipped: number[] }} */
 export function emptyStarRecords() {
-  return { best: {}, unlocked: 0 };
+  return { best: {}, unlocked: 0, skipped: [] };
 }
 
 /**
  * @param {string | null | undefined} raw
- * @returns {{ best: Record<number, number>, unlocked: number }}
+ * @returns {{ best: Record<number, number>, unlocked: number, skipped: number[] }}
  */
 export function parseStarRecords(raw) {
   if (raw == null || raw === "") return emptyStarRecords();
@@ -129,14 +168,15 @@ export function parseStarRecords(raw) {
     for (const k of Object.keys(best)) {
       unlocked = Math.max(unlocked, Math.floor(Number(k)) + 1);
     }
-    return { best, unlocked };
+    const skipped = normalizeSkipped(data.skipped, best);
+    return { best, unlocked, skipped };
   } catch {
     return emptyStarRecords();
   }
 }
 
 /**
- * @param {{ best?: Record<number, number>, unlocked?: number } | null | undefined} records
+ * @param {{ best?: Record<number, number>, unlocked?: number, skipped?: number[] } | null | undefined} records
  */
 export function serializeStarRecords(records) {
   const src =
@@ -149,12 +189,15 @@ export function serializeStarRecords(records) {
     best[String(k)] = v;
   }
   const unlocked = Math.max(0, Math.floor(Number(records?.unlocked) || 0));
-  return JSON.stringify({ best, unlocked });
+  const skipped = normalizeSkipped(records?.skipped, Object.fromEntries(
+    Object.entries(best).map(([k, v]) => [Number(k), v]),
+  ));
+  return JSON.stringify({ best, unlocked, skipped });
 }
 
 /**
  * Ensure `levelIndex` (and anything below) can be played.
- * @param {{ best: Record<number, number>, unlocked: number }} records
+ * @param {{ best: Record<number, number>, unlocked: number, skipped?: number[] }} records
  * @param {number} levelIndex
  */
 export function withUnlocked(records, levelIndex) {
@@ -162,12 +205,14 @@ export function withUnlocked(records, levelIndex) {
   return {
     best: { ...records.best },
     unlocked: Math.max(records.unlocked, i),
+    skipped: normalizeSkipped(records.skipped, records.best),
   };
 }
 
 /**
  * Keep the higher star count; completing a level unlocks the next.
- * @param {{ best: Record<number, number>, unlocked: number }} records
+ * Finishing a skipped level drops it from `skipped` so a skip slot returns.
+ * @param {{ best: Record<number, number>, unlocked: number, skipped?: number[] }} records
  * @param {number} levelIndex
  * @param {number} stars
  */
@@ -175,9 +220,11 @@ export function recordLevelStars(records, levelIndex, stars) {
   const i = Math.max(0, Math.floor(levelIndex));
   const s = Math.min(3, Math.max(1, Math.floor(stars)));
   const prev = records.best[i] ?? 0;
+  const best = { ...records.best, [i]: Math.max(prev, s) };
   return {
-    best: { ...records.best, [i]: Math.max(prev, s) },
+    best,
     unlocked: Math.max(records.unlocked, i + 1),
+    skipped: normalizeSkipped(records.skipped, best),
   };
 }
 
@@ -199,6 +246,68 @@ export function isLevelUnlocked(records, levelIndex) {
 }
 
 /**
+ * @param {{ skipped?: number[] }} records
+ */
+export function skippedLevels(records) {
+  return normalizeSkipped(records?.skipped);
+}
+
+/**
+ * @param {{ skipped?: number[] }} records
+ */
+export function skipsRemaining(records) {
+  return Math.max(0, MAX_SKIPS - skippedLevels(records).length);
+}
+
+/**
+ * @param {{ skipped?: number[] }} records
+ * @param {number} levelIndex
+ */
+export function isLevelSkipped(records, levelIndex) {
+  const i = Math.floor(Number(levelIndex));
+  if (!Number.isFinite(i)) return false;
+  return skippedLevels(records).includes(i);
+}
+
+/**
+ * Skip is allowed when the level is uncleared, not already skipped, and a slot remains.
+ * @param {{ best: Record<number, number>, skipped?: number[] }} records
+ * @param {number} levelIndex
+ */
+export function canSkipLevel(records, levelIndex) {
+  const i = Math.floor(Number(levelIndex));
+  if (!Number.isFinite(i) || i < 0) return false;
+  if (starsForLevel(records, i) > 0) return false;
+  if (isLevelSkipped(records, i)) return false;
+  return skipsRemaining(records) > 0;
+}
+
+/**
+ * Mark `levelIndex` skipped and unlock the next pack index. No-op when `canSkipLevel` is false.
+ * @param {{ best: Record<number, number>, unlocked: number, skipped?: number[] }} records
+ * @param {number} levelIndex
+ * @param {number} packSize
+ */
+export function skipLevel(records, levelIndex, packSize) {
+  const best = { ...records.best };
+  const skipped = normalizeSkipped(records.skipped, best);
+  if (!canSkipLevel({ best, skipped }, levelIndex)) {
+    return {
+      best,
+      unlocked: records.unlocked,
+      skipped,
+    };
+  }
+  const i = Math.floor(levelIndex);
+  const next = nextLevelIndex(i, packSize);
+  return {
+    best,
+    unlocked: Math.max(records.unlocked, i, next),
+    skipped: normalizeSkipped([...skipped, i], best),
+  };
+}
+
+/**
  * @param {number} levelIndex
  * @param {number} packSize
  */
@@ -210,12 +319,12 @@ export function nextLevelIndex(levelIndex, packSize) {
 }
 
 /**
- * @param {{ best: Record<number, number>, unlocked: number }} records
+ * @param {{ best: Record<number, number>, unlocked: number, skipped?: number[] }} records
  * @param {number} packSize
  */
 export function levelSelectItems(records, packSize) {
   const size = Math.max(0, Math.floor(Number(packSize) || 0));
-  /** @type {Array<{ index: number, number: number, stars: number, unlocked: boolean, completed: boolean }>} */
+  /** @type {Array<{ index: number, number: number, stars: number, unlocked: boolean, completed: boolean, skipped: boolean }>} */
   const items = [];
   for (let i = 0; i < size; i++) {
     const stars = starsForLevel(records, i);
@@ -225,6 +334,7 @@ export function levelSelectItems(records, packSize) {
       stars,
       unlocked: isLevelUnlocked(records, i),
       completed: stars > 0,
+      skipped: isLevelSkipped(records, i),
     });
   }
   return items;

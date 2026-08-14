@@ -9,9 +9,10 @@ import {
   getLevelData,
   rngFrom,
   buildLevelForIndex,
+  repairToSolvable,
 } from "../js/levels.js";
 import { isCenterCell } from "../js/level-build.js";
-import { canEscapePath, cellKey } from "../js/logic.js";
+import { canEscapePath, cellKey, isSolvable, stuckArrows } from "../js/logic.js";
 
 describe("TUTORIAL", () => {
   it("has both free and blocked arrows on a small board", () => {
@@ -59,15 +60,16 @@ describe("level generation", () => {
     }
   });
 
-  it("starts each multi-cell arrow tail in the center zone", () => {
+  it("keeps a center-zone endpoint on each multi-cell arrow", () => {
     const level = buildSolvableLevel(10, 12, rngFrom(77));
     const multiCellArrows = level.arrows.filter((arrow) => arrow.path.length > 1);
     assert.ok(multiCellArrows.length > 0, "expected at least one multi-cell arrow");
     for (const arrow of multiCellArrows) {
-      const [x, y] = arrow.path[0];
+      const [tx, ty] = arrow.path[0];
+      const [hx, hy] = arrow.path[arrow.path.length - 1];
       assert.ok(
-        isCenterCell(x, y, level.size),
-        `tail at (${x}, ${y}) should be in the center zone on size ${level.size}`,
+        isCenterCell(tx, ty, level.size) || isCenterCell(hx, hy, level.size),
+        `tail (${tx}, ${ty}) or head (${hx}, ${hy}) should be in the center zone on size ${level.size}`,
       );
     }
   });
@@ -103,5 +105,123 @@ describe("level generation", () => {
         }
       }
     }
+  });
+
+  it("produces solvable boards", () => {
+    const level = buildSolvableLevel(10, 12, rngFrom(77));
+    assert.equal(isSolvable(level.size, level.arrows), true);
+    assert.equal(isSolvable(TUTORIAL.size, TUTORIAL.arrows), true);
+  });
+
+  it("every pack level is solvable", () => {
+    assert.ok(LEVEL_PACK.length > 0);
+    for (let i = 0; i < LEVEL_PACK.length; i += 1) {
+      const level = LEVEL_PACK[i];
+      assert.equal(
+        isSolvable(level.size, level.arrows),
+        true,
+        `level ${i + 1} (index ${i}) should be solvable`,
+      );
+    }
+  });
+});
+
+describe("repairToSolvable", () => {
+  it("leaves an already-clear board unchanged", () => {
+    const level = {
+      size: 4,
+      arrows: [{ dir: "E", path: [[0, 0]] }],
+    };
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(level.arrows[0].dir, "E");
+  });
+
+  it("flips a facing length-1 pair so greedy clear works", () => {
+    const level = {
+      size: 14,
+      arrows: [
+        { dir: "S", path: [[5, 5]] },
+        { dir: "N", path: [[5, 7]] },
+      ],
+    };
+    assert.equal(isSolvable(level.size, level.arrows), false);
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(isSolvable(level.size, level.arrows), true);
+    assert.deepEqual(
+      level.arrows.map((a) => a.path),
+      [[[5, 5]], [[5, 7]]],
+    );
+  });
+
+  it("reverses a head-to-head pair on a file", () => {
+    const level = {
+      size: 8,
+      arrows: [
+        { dir: "E", path: [[2, 2], [3, 2]] },
+        { dir: "W", path: [[5, 2], [4, 2]] },
+      ],
+    };
+    assert.equal(isSolvable(level.size, level.arrows), false);
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(isSolvable(level.size, level.arrows), true);
+    const cells = new Set();
+    for (const arrow of level.arrows) {
+      for (const [x, y] of arrow.path) cells.add(cellKey(x, y));
+    }
+    assert.equal(cells.size, 4);
+  });
+
+  it("reverses a north-south head-to-head pair", () => {
+    const level = {
+      size: 8,
+      arrows: [
+        { dir: "S", path: [[3, 2], [3, 3]] },
+        { dir: "N", path: [[3, 5], [3, 4]] },
+      ],
+    };
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(isSolvable(level.size, level.arrows), true);
+  });
+
+  it("returns false when leftover arrows cannot be reoriented", () => {
+    const level = {
+      size: 4,
+      arrows: [
+        { dir: "E", path: [[0, 0], [1, 1]] },
+        { dir: "W", path: [[3, 0], [2, 1]] },
+      ],
+    };
+    assert.equal(isSolvable(level.size, level.arrows), false);
+    assert.equal(repairToSolvable(level), false);
+    assert.equal(stuckArrows(level.size, level.arrows).length, 2);
+  });
+
+  it("skips a length-1 whose every dir is blocked, then frees a neighbor", () => {
+    const level = {
+      size: 5,
+      arrows: [
+        { dir: "N", path: [[2, 2]] },
+        { dir: "S", path: [[2, 1]] },
+        { dir: "N", path: [[2, 3]] },
+        { dir: "E", path: [[1, 2]] },
+        { dir: "W", path: [[3, 2]] },
+      ],
+    };
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(isSolvable(level.size, level.arrows), true);
+  });
+
+  it("reverts a reverse that is still blocked and repairs another arrow", () => {
+    const level = {
+      size: 6,
+      arrows: [
+        { dir: "E", path: [[1, 2], [2, 2]] },
+        { dir: "W", path: [[4, 2], [3, 2]] },
+        { dir: "E", path: [[0, 2]] },
+      ],
+    };
+    assert.equal(isSolvable(level.size, level.arrows), false);
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(isSolvable(level.size, level.arrows), true);
   });
 });

@@ -23,6 +23,9 @@ import {
   recordLevelStars,
   nextLevelIndex,
   levelSelectItems,
+  canSkipLevel,
+  skipLevel,
+  skipsRemaining,
 } from "./js/progress.js";
 
 const STYLE = `:root {
@@ -501,6 +504,15 @@ body {
   border-color: rgba(232, 255, 71, 0.35);
 }
 
+.level-cell.is-skipped:not(:disabled) {
+  border-style: dashed;
+  border-color: rgba(244, 244, 240, 0.5);
+}
+
+.level-cell.is-skipped.is-current:not(:disabled) {
+  border-color: var(--accent);
+}
+
 .level-cell:disabled {
   opacity: 0.32;
   cursor: not-allowed;
@@ -658,6 +670,7 @@ function buildUI() {
         <p class="overlay-copy" id="endCopy">Every arrow found its way out.</p>
         <div class="end-actions">
           <button type="button" class="btn btn-primary" id="btnEndPrimary">Next</button>
+          <button type="button" class="btn" id="btnEndSkip" hidden>Skip this level</button>
           <button type="button" class="btn" id="btnEndLevels">All levels</button>
         </div>
       </div>
@@ -666,7 +679,7 @@ function buildUI() {
       <div class="overlay-card overlay-card-levels" id="levelsDialog" role="dialog" aria-modal="true" aria-labelledby="levelsTitle">
         <p class="overlay-kicker">Select</p>
         <h2 class="overlay-title" id="levelsTitle">All levels</h2>
-        <p class="level-legend">Filled stars are your best clear. Unlocked levels you have not cleared yet are outlined. Locked levels wait until you finish the one before.</p>
+        <p class="level-legend">Filled stars are your best clear. Unlocked levels you have not cleared yet are outlined. Skipped levels have a dashed border — finish one to get a skip back. Locked levels wait until you finish or skip the one before.</p>
         <div class="level-grid" id="levelGrid"></div>
         <div class="menu-actions">
           <button type="button" class="btn" id="btnCloseLevels">Close</button>
@@ -699,9 +712,14 @@ function buildUI() {
               <dt>Levels cleared</dt>
               <dd id="statCleared">0</dd>
             </div>
+            <div class="menu-stat">
+              <dt>Skips left</dt>
+              <dd id="statSkips">3</dd>
+            </div>
           </dl>
           <div class="menu-actions">
             <button type="button" class="btn" id="btnAllLevels">All levels</button>
+            <button type="button" class="btn" id="btnSkipLevel">Skip this level</button>
             <button type="button" class="btn" id="btnCloseMenu">Close</button>
             <button type="button" class="btn btn-danger" id="btnClearProgress">Clear all progress</button>
           </div>
@@ -746,6 +764,7 @@ const endTitle = document.getElementById("endTitle");
 const endCopy = document.getElementById("endCopy");
 const endStars = document.getElementById("endStars");
 const btnEndPrimary = document.getElementById("btnEndPrimary");
+const btnEndSkip = document.getElementById("btnEndSkip");
 const btnEndLevels = document.getElementById("btnEndLevels");
 const btnReset = document.getElementById("btnReset");
 const btnMenu = document.getElementById("btnMenu");
@@ -758,10 +777,12 @@ const statMoves = document.getElementById("statMoves");
 const statArrows = document.getElementById("statArrows");
 const statChances = document.getElementById("statChances");
 const statCleared = document.getElementById("statCleared");
+const statSkips = document.getElementById("statSkips");
 const playLevel = document.getElementById("playLevel");
 const livesEl = document.getElementById("lives");
 const btnCloseMenu = document.getElementById("btnCloseMenu");
 const btnAllLevels = document.getElementById("btnAllLevels");
+const btnSkipLevel = document.getElementById("btnSkipLevel");
 const btnClearProgress = document.getElementById("btnClearProgress");
 const btnCancelClear = document.getElementById("btnCancelClear");
 const btnConfirmClear = document.getElementById("btnConfirmClear");
@@ -785,7 +806,7 @@ const state = {
   endMode: /** @type {'win' | 'fail' | null} */ (null),
 };
 
-/** @type {{ best: Record<number, number>, unlocked: number }} */
+/** @type {{ best: Record<number, number>, unlocked: number, skipped: number[] }} */
 let starRecords = emptyStarRecords();
 
 function loadProgress() {
@@ -855,6 +876,7 @@ function showWinSplash(stars) {
   endTitle.textContent = "Level complete";
   setEndStars(stars);
   endStars.hidden = false;
+  btnEndSkip.hidden = true;
   endCopy.textContent = last
     ? `That's the last level. Up next: Level ${nextNumber}.`
     : `Up next: Level ${nextNumber}.`;
@@ -871,6 +893,7 @@ function showFailSplash() {
   endCopy.textContent =
     "You failed to complete the level. Three arrows could not move — reset to try again.";
   btnEndPrimary.textContent = "Reset";
+  refreshSkipButtons();
   endOverlay.hidden = false;
 }
 
@@ -904,6 +927,35 @@ function startLevel(index) {
   saveStars();
   saveProgress();
   hydrateLevel(structuredClone(getLevelData(state.levelIndex)));
+}
+
+function refreshSkipButtons() {
+  const allowed = canSkipLevel(starRecords, state.levelIndex);
+  const left = skipsRemaining(starRecords);
+  btnSkipLevel.disabled = !allowed;
+  btnSkipLevel.setAttribute(
+    "aria-label",
+    allowed
+      ? `Skip this level, ${left} skip${left === 1 ? "" : "s"} left`
+      : left <= 0
+        ? "No skips left. Finish a skipped level to get one back."
+        : "Cannot skip this level",
+  );
+  const showEndSkip = state.endMode === "fail" && allowed;
+  btnEndSkip.hidden = !showEndSkip;
+  if (showEndSkip) {
+    const nextNumber = nextLevelIndex(state.levelIndex, LEVEL_PACK.length) + 1;
+    btnEndSkip.textContent = `Skip — Level ${nextNumber}`;
+  }
+}
+
+function skipCurrentLevel() {
+  if (!canSkipLevel(starRecords, state.levelIndex)) return;
+  const next = nextLevelIndex(state.levelIndex, LEVEL_PACK.length);
+  starRecords = skipLevel(starRecords, state.levelIndex, LEVEL_PACK.length);
+  saveStars();
+  closeMenu();
+  startLevel(next);
 }
 
 function canEscape(arrow) {
@@ -1224,6 +1276,7 @@ function onEndPrimary() {
 }
 
 btnEndPrimary.addEventListener("click", () => onEndPrimary());
+btnEndSkip.addEventListener("click", () => skipCurrentLevel());
 btnEndLevels.addEventListener("click", () => openLevels());
 
 function refreshMenuStats() {
@@ -1234,6 +1287,7 @@ function refreshMenuStats() {
     packSize: LEVEL_PACK.length,
     won: state.won,
     strikes: state.strikes,
+    skipsLeft: skipsRemaining(starRecords),
   });
   menuTitle.textContent = `Level ${stats.levelNumber}`;
   statLevel.textContent = `${stats.levelNumber} / ${stats.packSize}`;
@@ -1241,6 +1295,8 @@ function refreshMenuStats() {
   statArrows.textContent = `${stats.arrowsRemaining} / ${stats.arrowsTotal}`;
   statChances.textContent = String(stats.chances);
   statCleared.textContent = String(stats.levelsCleared);
+  statSkips.textContent = String(stats.skipsLeft);
+  refreshSkipButtons();
 }
 
 function closeLevels() {
@@ -1257,12 +1313,15 @@ function openLevels() {
     btn.className = "level-cell";
     if (item.index === state.levelIndex) btn.classList.add("is-current");
     if (item.unlocked && !item.completed) btn.classList.add("is-incomplete");
+    if (item.skipped) btn.classList.add("is-skipped");
     btn.disabled = !item.unlocked;
     const status = !item.unlocked
       ? "locked"
       : item.completed
         ? `${item.stars} star${item.stars === 1 ? "" : "s"}`
-        : "not cleared";
+        : item.skipped
+          ? "skipped, not cleared"
+          : "not cleared";
     btn.setAttribute("aria-label", `Level ${item.number}, ${status}`);
     const num = document.createElement("span");
     num.textContent = String(item.number);
@@ -1322,6 +1381,7 @@ btnMenu.addEventListener("click", () => {
 });
 btnCloseMenu.addEventListener("click", () => closeMenu());
 btnAllLevels.addEventListener("click", () => openLevels());
+btnSkipLevel.addEventListener("click", () => skipCurrentLevel());
 btnCloseLevels.addEventListener("click", () => closeLevels());
 btnClearProgress.addEventListener("click", () => showMenuConfirm(true));
 btnCancelClear.addEventListener("click", () => showMenuConfirm(false));
