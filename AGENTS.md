@@ -38,7 +38,8 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
 - **Reset vs Menu vs Skip** — the toolbar Reset button restarts the **current** level only (and the fail splash Reset does the same). Level number, stats, All levels, skip, and “start over from zero” live in the Menu overlay (`btnMenu`). Skip also appears on the fail splash when a slot remains. Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into Reset
 - **Skip quota** — at most three outstanding skipped (uncleared) levels. Skip unlocks the next pack index. Finishing a skipped level from All levels restores a slot. Skip is disabled on cleared or already-skipped levels, and when the quota is empty
-- **End splash** — win and fail share one overlay. Win shows stars and requires **Next**; the next pack index lives on that button only (`Next — Level N`), not also in the body copy. Fail title is **Out of chances**; body names the three blocked taps and requires **Reset** (do not also instruct Reset in the copy). Do not auto-advance
+- **Overlay copy** — one fact per line. Kicker, title, body, and buttons must not restate the same destination, outcome, or action. The primary button is the action; body copy is not a second CTA
+- **End splash** — win and fail share one overlay; do not auto-advance. Win shows stars and requires **Next**. Fail requires **Reset**
 - **All levels** — each cell shows three ★ `.level-pip` glyphs; earned ones need `.level-pip.filled` (accent color, not clip-path). That rule is separate from `.star.filled` on the win splash — a missing fill or tiny clip-path pips make 1/2/3 look uncleared
 
 ## Workflow
@@ -76,6 +77,7 @@ When a pull request surfaces something future agents should know, add a small, c
 
 - New or moved file → add or adjust a row in **Files (by domain)**
 - New convention, API, or storage detail → one bullet under **Stack**, **Design**, or **Do not**
+- UI / copy → a rule the surface must keep complying with (what must remain true), not a freeze of the current headline, button label, or body string
 - Bug, edge case, or solvability pitfall → short note so the mistake is not repeated
 - Workflow or testing lesson → clarify **Execution** or link deploy/CI paths that were easy to miss
 
