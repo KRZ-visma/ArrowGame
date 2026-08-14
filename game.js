@@ -7,10 +7,22 @@ import {
 import { getLevelData, LEVEL_PACK } from "./js/levels.js";
 import {
   STORAGE_KEY,
+  STARS_KEY,
+  MAX_STRIKES,
   parseLevelIndex,
   serializeLevelIndex,
   clearAllProgress,
   menuStats,
+  minMovesForArrows,
+  starsForClear,
+  hasFailed,
+  parseStarRecords,
+  serializeStarRecords,
+  emptyStarRecords,
+  withUnlocked,
+  recordLevelStars,
+  nextLevelIndex,
+  levelSelectItems,
 } from "./js/progress.js";
 
 const STYLE = `:root {
@@ -24,7 +36,7 @@ const STYLE = `:root {
   --ok: #5dffb0;
   --font-display: "Archivo Black", Impact, sans-serif;
   --font-body: "DM Sans", system-ui, sans-serif;
-  --board-max: min(92vmin, min(calc(100vw - 2rem), calc(100dvh - 5.5rem - var(--safe-top) - var(--safe-bottom))));
+  --board-max: min(92vmin, min(calc(100vw - 2rem), calc(100dvh - 6.75rem - var(--safe-top) - var(--safe-bottom))));
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -149,6 +161,43 @@ body {
   width: 1.15rem;
   height: 1.15rem;
   display: block;
+}
+
+.play-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: var(--board-max);
+  margin: 0 0 0.45rem;
+  min-height: 1.35rem;
+}
+
+.play-level {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lives {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.life {
+  width: 0.78rem;
+  height: 0.78rem;
+  background: var(--accent);
+  clip-path: polygon(0 35%, 55% 35%, 55% 0, 100% 50%, 55% 100%, 55% 65%, 0 65%);
+}
+
+.life.spent {
+  background: var(--danger);
+  opacity: 0.38;
 }
 
 .stage {
@@ -344,6 +393,135 @@ body {
   width: 100%;
 }
 
+.end-stars {
+  display: flex;
+  justify-content: center;
+  gap: 0.55rem;
+  margin: 0.15rem 0 1rem;
+}
+
+.end-stars[hidden] {
+  display: none;
+}
+
+.star {
+  width: 1.45rem;
+  height: 1.45rem;
+  background: rgba(244, 244, 240, 0.14);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.star.filled {
+  background: var(--accent);
+}
+
+.overlay-card.is-fail {
+  background:
+    linear-gradient(160deg, rgba(255, 90, 60, 0.12), transparent 42%),
+    #0d0d0d;
+}
+
+.overlay-card.is-fail .overlay-kicker {
+  color: var(--danger);
+}
+
+.end-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.end-actions .btn {
+  width: 100%;
+}
+
+.overlay-levels {
+  z-index: 40;
+}
+
+.overlay-card-levels {
+  width: min(26rem, 100%);
+  height: min(78dvh, calc(100dvh - 2.5rem - var(--safe-top) - var(--safe-bottom)));
+  max-height: min(78dvh, calc(100dvh - 2.5rem - var(--safe-top) - var(--safe-bottom)));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+
+.level-legend {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.level-cell {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-height: 48px;
+  padding: 0.35rem 0.2rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.level-cell:hover:not(:disabled) {
+  border-color: rgba(244, 244, 240, 0.35);
+  background: rgba(244, 244, 240, 0.04);
+}
+
+.level-cell.is-current {
+  border-color: var(--accent);
+}
+
+.level-cell.is-incomplete:not(:disabled) {
+  border-color: rgba(232, 255, 71, 0.35);
+}
+
+.level-cell:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.level-pips {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.level-pip {
+  width: 0.38rem;
+  height: 0.38rem;
+  background: rgba(244, 244, 240, 0.16);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.overlay-card-levels .menu-actions {
+  flex-shrink: 0;
+}
+
 @keyframes fade-down {
   from {
     opacity: 0;
@@ -448,17 +626,44 @@ function buildUI() {
       </div>
     </header>
     <main class="stage">
+      <div class="play-meta">
+        <p class="play-level" id="playLevel">Level 1</p>
+        <div class="lives" id="lives" aria-label="Chances left">
+          <span class="life" data-life="0"></span>
+          <span class="life" data-life="1"></span>
+          <span class="life" data-life="2"></span>
+        </div>
+      </div>
       <div class="board-wrap">
         <canvas id="board" width="720" height="720" role="img" aria-label="Arrow puzzle board"></canvas>
         <div class="board-glow" aria-hidden="true"></div>
       </div>
     </main>
-    <div class="overlay" id="winOverlay" hidden>
-      <div class="overlay-card">
-        <p class="overlay-kicker">Cleared</p>
-        <h2 class="overlay-title" id="winTitle">Level complete</h2>
-        <p class="overlay-copy" id="winCopy">Every arrow found its way out.</p>
-        <button type="button" class="btn btn-primary" id="btnNext">Next level</button>
+    <div class="overlay" id="endOverlay" hidden>
+      <div class="overlay-card" id="endCard" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+        <p class="overlay-kicker" id="endKicker">Cleared</p>
+        <h2 class="overlay-title" id="endTitle">Level complete</h2>
+        <div class="end-stars" id="endStars" hidden>
+          <span class="star" data-star="1"></span>
+          <span class="star" data-star="2"></span>
+          <span class="star" data-star="3"></span>
+        </div>
+        <p class="overlay-copy" id="endCopy">Every arrow found its way out.</p>
+        <div class="end-actions">
+          <button type="button" class="btn btn-primary" id="btnEndPrimary">Next</button>
+          <button type="button" class="btn" id="btnEndLevels">All levels</button>
+        </div>
+      </div>
+    </div>
+    <div class="overlay overlay-levels" id="levelsOverlay" hidden>
+      <div class="overlay-card overlay-card-levels" id="levelsDialog" role="dialog" aria-modal="true" aria-labelledby="levelsTitle">
+        <p class="overlay-kicker">Select</p>
+        <h2 class="overlay-title" id="levelsTitle">All levels</h2>
+        <p class="level-legend">Unlocked levels you have not cleared yet are outlined. Locked levels wait until you finish the one before.</p>
+        <div class="level-grid" id="levelGrid"></div>
+        <div class="menu-actions">
+          <button type="button" class="btn" id="btnCloseLevels">Close</button>
+        </div>
       </div>
     </div>
     <div class="overlay overlay-menu" id="menuOverlay" hidden>
@@ -480,11 +685,16 @@ function buildUI() {
               <dd id="statArrows">0 / 0</dd>
             </div>
             <div class="menu-stat">
+              <dt>Chances</dt>
+              <dd id="statChances">3</dd>
+            </div>
+            <div class="menu-stat">
               <dt>Levels cleared</dt>
               <dd id="statCleared">0</dd>
             </div>
           </dl>
           <div class="menu-actions">
+            <button type="button" class="btn" id="btnAllLevels">All levels</button>
             <button type="button" class="btn" id="btnCloseMenu">Close</button>
             <button type="button" class="btn btn-danger" id="btnClearProgress">Clear all progress</button>
           </div>
@@ -522,11 +732,15 @@ buildUI();
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
-const winOverlay = document.getElementById("winOverlay");
-const winTitle = document.getElementById("winTitle");
-const winCopy = document.getElementById("winCopy");
+const endOverlay = document.getElementById("endOverlay");
+const endCard = document.getElementById("endCard");
+const endKicker = document.getElementById("endKicker");
+const endTitle = document.getElementById("endTitle");
+const endCopy = document.getElementById("endCopy");
+const endStars = document.getElementById("endStars");
+const btnEndPrimary = document.getElementById("btnEndPrimary");
+const btnEndLevels = document.getElementById("btnEndLevels");
 const btnReset = document.getElementById("btnReset");
-const btnNext = document.getElementById("btnNext");
 const btnMenu = document.getElementById("btnMenu");
 const menuOverlay = document.getElementById("menuOverlay");
 const menuMain = document.getElementById("menuMain");
@@ -535,24 +749,37 @@ const menuTitle = document.getElementById("menuTitle");
 const statLevel = document.getElementById("statLevel");
 const statMoves = document.getElementById("statMoves");
 const statArrows = document.getElementById("statArrows");
+const statChances = document.getElementById("statChances");
 const statCleared = document.getElementById("statCleared");
+const playLevel = document.getElementById("playLevel");
+const livesEl = document.getElementById("lives");
 const btnCloseMenu = document.getElementById("btnCloseMenu");
+const btnAllLevels = document.getElementById("btnAllLevels");
 const btnClearProgress = document.getElementById("btnClearProgress");
 const btnCancelClear = document.getElementById("btnCancelClear");
 const btnConfirmClear = document.getElementById("btnConfirmClear");
+const levelsOverlay = document.getElementById("levelsOverlay");
+const levelGrid = document.getElementById("levelGrid");
+const btnCloseLevels = document.getElementById("btnCloseLevels");
 
 const state = {
   levelIndex: 0,
   size: 8,
   arrows: /** @type {Arrow[]} */ ([]),
   moves: 0,
+  strikes: 0,
   cell: 40,
   pad: 24,
   dpr: 1,
   pointer: null,
   animating: false,
   won: false,
+  failed: false,
+  endMode: /** @type {'win' | 'fail' | null} */ (null),
 };
+
+/** @type {{ best: Record<number, number>, unlocked: number }} */
+let starRecords = emptyStarRecords();
 
 function loadProgress() {
   try {
@@ -560,6 +787,15 @@ function loadProgress() {
     if (parsed != null) state.levelIndex = parsed;
   } catch {
     /* ignore */
+  }
+  try {
+    starRecords = withUnlocked(
+      parseStarRecords(localStorage.getItem(STARS_KEY)),
+      state.levelIndex,
+    );
+    saveStars();
+  } catch {
+    starRecords = withUnlocked(emptyStarRecords(), state.levelIndex);
   }
 }
 
@@ -569,6 +805,66 @@ function saveProgress() {
   } catch {
     /* ignore */
   }
+}
+
+function saveStars() {
+  try {
+    localStorage.setItem(STARS_KEY, serializeStarRecords(starRecords));
+  } catch {
+    /* ignore */
+  }
+}
+
+function refreshPlayHud() {
+  playLevel.textContent = `Level ${state.levelIndex + 1}`;
+  const pips = livesEl.querySelectorAll(".life");
+  pips.forEach((pip, i) => {
+    pip.classList.toggle("spent", i < state.strikes);
+  });
+  livesEl.setAttribute("aria-label", `${Math.max(0, MAX_STRIKES - state.strikes)} chances left`);
+}
+
+function setEndStars(count) {
+  const stars = endStars.querySelectorAll(".star");
+  stars.forEach((star, i) => {
+    star.classList.toggle("filled", i < count);
+  });
+  endStars.setAttribute("aria-label", `${count} star${count === 1 ? "" : "s"}`);
+}
+
+function hideEndOverlay() {
+  endOverlay.hidden = true;
+  state.endMode = null;
+  endCard.classList.remove("is-fail");
+}
+
+function showWinSplash(stars) {
+  const next = nextLevelIndex(state.levelIndex, LEVEL_PACK.length);
+  const nextNumber = next + 1;
+  const last = state.levelIndex >= LEVEL_PACK.length - 1;
+  state.endMode = "win";
+  endCard.classList.remove("is-fail");
+  endKicker.textContent = "Cleared";
+  endTitle.textContent = "Level complete";
+  setEndStars(stars);
+  endStars.hidden = false;
+  endCopy.textContent = last
+    ? `That's the last level. Up next: Level ${nextNumber}.`
+    : `Up next: Level ${nextNumber}.`;
+  btnEndPrimary.textContent = `Next — Level ${nextNumber}`;
+  endOverlay.hidden = false;
+}
+
+function showFailSplash() {
+  state.endMode = "fail";
+  endCard.classList.add("is-fail");
+  endKicker.textContent = "Failed";
+  endTitle.textContent = "Level failed";
+  endStars.hidden = true;
+  endCopy.textContent =
+    "You failed to complete the level. Three arrows could not move — reset to try again.";
+  btnEndPrimary.textContent = "Reset";
+  endOverlay.hidden = false;
 }
 
 function hydrateLevel(level) {
@@ -586,14 +882,19 @@ function hydrateLevel(level) {
     hovered: false,
   }));
   state.moves = 0;
+  state.strikes = 0;
   state.animating = false;
   state.won = false;
-  winOverlay.hidden = true;
+  state.failed = false;
+  hideEndOverlay();
+  refreshPlayHud();
   resize();
 }
 
 function startLevel(index) {
   state.levelIndex = Math.max(0, index);
+  starRecords = withUnlocked(starRecords, state.levelIndex);
+  saveStars();
   saveProgress();
   hydrateLevel(structuredClone(getLevelData(state.levelIndex)));
 }
@@ -674,13 +975,20 @@ function syncAnimating() {
 }
 
 function tryMove(arrow) {
+  if (state.won || state.failed) return;
   if (arrow.state !== "idle") return;
 
   if (!canEscape(arrow)) {
     arrow.state = "shake";
     arrow.animT = 0;
     arrow.shakePhase = Math.random() * Math.PI * 2;
+    state.strikes += 1;
+    refreshPlayHud();
     syncAnimating();
+    if (hasFailed(state.strikes)) {
+      state.failed = true;
+      showFailSplash();
+    }
     return;
   }
 
@@ -734,12 +1042,14 @@ function updateArrow(arrow, dt) {
 }
 
 function checkWin() {
-  if (state.won) return;
+  if (state.won || state.failed) return;
   if (state.arrows.every((a) => a.state === "gone")) {
     state.won = true;
-    winTitle.textContent = "Level complete";
-    winCopy.textContent = "Every arrow found its way out.";
-    winOverlay.hidden = false;
+    const minMoves = minMovesForArrows(state.arrows);
+    const stars = starsForClear(minMoves, state.moves + state.strikes);
+    starRecords = recordLevelStars(starRecords, state.levelIndex, stars);
+    saveStars();
+    showWinSplash(stars);
   }
 }
 
@@ -880,6 +1190,7 @@ canvas.addEventListener("pointerleave", () => {
 canvas.addEventListener("pointerdown", (e) => {
   if (e.button !== 0) return;
   e.preventDefault();
+  if (state.won || state.failed) return;
   if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
   const { x, y } = clientToBoard(e.clientX, e.clientY);
   const arrow = arrowAtBoardPoint(x, y);
@@ -896,7 +1207,17 @@ canvas.addEventListener("pointercancel", (e) => {
 });
 
 btnReset.addEventListener("click", () => startLevel(state.levelIndex));
-btnNext.addEventListener("click", () => startLevel(state.levelIndex + 1));
+
+function onEndPrimary() {
+  if (state.endMode === "fail") {
+    startLevel(state.levelIndex);
+    return;
+  }
+  startLevel(nextLevelIndex(state.levelIndex, LEVEL_PACK.length));
+}
+
+btnEndPrimary.addEventListener("click", () => onEndPrimary());
+btnEndLevels.addEventListener("click", () => openLevels());
 
 function refreshMenuStats() {
   const stats = menuStats({
@@ -905,12 +1226,59 @@ function refreshMenuStats() {
     arrows: state.arrows,
     packSize: LEVEL_PACK.length,
     won: state.won,
+    strikes: state.strikes,
   });
   menuTitle.textContent = `Level ${stats.levelNumber}`;
   statLevel.textContent = `${stats.levelNumber} / ${stats.packSize}`;
   statMoves.textContent = String(stats.moves);
   statArrows.textContent = `${stats.arrowsRemaining} / ${stats.arrowsTotal}`;
+  statChances.textContent = String(stats.chances);
   statCleared.textContent = String(stats.levelsCleared);
+}
+
+function closeLevels() {
+  levelsOverlay.hidden = true;
+}
+
+function openLevels() {
+  closeMenu();
+  const items = levelSelectItems(starRecords, LEVEL_PACK.length);
+  levelGrid.replaceChildren();
+  for (const item of items) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "level-cell";
+    if (item.index === state.levelIndex) btn.classList.add("is-current");
+    if (item.unlocked && !item.completed) btn.classList.add("is-incomplete");
+    btn.disabled = !item.unlocked;
+    const status = !item.unlocked
+      ? "locked"
+      : item.completed
+        ? `${item.stars} star${item.stars === 1 ? "" : "s"}`
+        : "not cleared";
+    btn.setAttribute("aria-label", `Level ${item.number}, ${status}`);
+    const num = document.createElement("span");
+    num.textContent = String(item.number);
+    const pips = document.createElement("span");
+    pips.className = "level-pips";
+    pips.setAttribute("aria-hidden", "true");
+    for (let s = 1; s <= 3; s++) {
+      const pip = document.createElement("span");
+      pip.className = s <= item.stars ? "level-pip filled" : "level-pip";
+      pips.appendChild(pip);
+    }
+    btn.append(num, pips);
+    if (item.unlocked) {
+      btn.addEventListener("click", () => {
+        closeLevels();
+        closeMenu();
+        startLevel(item.index);
+      });
+    }
+    levelGrid.appendChild(btn);
+  }
+  levelsOverlay.hidden = false;
+  btnCloseLevels.focus();
 }
 
 function showMenuConfirm(confirming) {
@@ -928,6 +1296,7 @@ function closeMenu() {
 }
 
 function openMenu() {
+  if (!levelsOverlay.hidden) closeLevels();
   refreshMenuStats();
   showMenuConfirm(false);
   menuOverlay.hidden = false;
@@ -936,10 +1305,16 @@ function openMenu() {
 }
 
 btnMenu.addEventListener("click", () => {
+  if (!levelsOverlay.hidden) {
+    closeLevels();
+    return;
+  }
   if (menuOverlay.hidden) openMenu();
   else closeMenu();
 });
 btnCloseMenu.addEventListener("click", () => closeMenu());
+btnAllLevels.addEventListener("click", () => openLevels());
+btnCloseLevels.addEventListener("click", () => closeLevels());
 btnClearProgress.addEventListener("click", () => showMenuConfirm(true));
 btnCancelClear.addEventListener("click", () => showMenuConfirm(false));
 btnConfirmClear.addEventListener("click", () => {
@@ -948,24 +1323,35 @@ btnConfirmClear.addEventListener("click", () => {
   } catch {
     /* ignore */
   }
+  starRecords = emptyStarRecords();
+  closeLevels();
   closeMenu();
   startLevel(0);
 });
 menuOverlay.addEventListener("click", (e) => {
   if (e.target === menuOverlay) closeMenu();
 });
+levelsOverlay.addEventListener("click", (e) => {
+  if (e.target === levelsOverlay) closeLevels();
+});
 
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !menuOverlay.hidden) {
-    if (!menuConfirm.hidden) showMenuConfirm(false);
-    else closeMenu();
+  if (e.key === "Escape") {
+    if (!levelsOverlay.hidden) {
+      closeLevels();
+      return;
+    }
+    if (!menuOverlay.hidden) {
+      if (!menuConfirm.hidden) showMenuConfirm(false);
+      else closeMenu();
+    }
     return;
   }
-  if (!menuOverlay.hidden) return;
+  if (!menuOverlay.hidden || !levelsOverlay.hidden) return;
   if (e.key === "r" || e.key === "R") {
     startLevel(state.levelIndex);
-  } else if (e.key === "n" || e.key === "N") {
-    if (!winOverlay.hidden) startLevel(state.levelIndex + 1);
+  } else if ((e.key === "n" || e.key === "N") && state.endMode === "win") {
+    onEndPrimary();
   }
 });
 

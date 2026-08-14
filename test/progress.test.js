@@ -2,18 +2,35 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   STORAGE_KEY,
+  STARS_KEY,
   STORAGE_KEYS,
+  MAX_STRIKES,
+  STAR_EXTRA_FOR_TWO,
   parseLevelIndex,
   serializeLevelIndex,
   snapshotArrows,
   parseArrowSnapshot,
   clearAllProgress,
   menuStats,
+  minMovesForArrows,
+  starsForClear,
+  hasFailed,
+  chancesLeft,
+  emptyStarRecords,
+  parseStarRecords,
+  serializeStarRecords,
+  withUnlocked,
+  recordLevelStars,
+  starsForLevel,
+  isLevelUnlocked,
+  nextLevelIndex,
+  levelSelectItems,
 } from "../js/progress.js";
 
 describe("progress storage", () => {
   it("keeps the public localStorage key stable", () => {
     assert.equal(STORAGE_KEY, "arrow-out-level");
+    assert.equal(STARS_KEY, "arrow-out-stars");
   });
 
   it("parses valid indices and rejects junk", () => {
@@ -30,9 +47,10 @@ describe("progress storage", () => {
   });
 
   it("lists every owned key and clearAllProgress removes only those", () => {
-    assert.deepEqual([...STORAGE_KEYS], [STORAGE_KEY]);
+    assert.deepEqual([...STORAGE_KEYS], [STORAGE_KEY, STARS_KEY]);
     const store = new Map([
       [STORAGE_KEY, "5"],
+      [STARS_KEY, "{}"],
       ["unrelated", "keep"],
     ]);
     const storage = {
@@ -42,6 +60,7 @@ describe("progress storage", () => {
     };
     clearAllProgress(storage);
     assert.equal(store.has(STORAGE_KEY), false);
+    assert.equal(store.has(STARS_KEY), false);
     assert.equal(store.get("unrelated"), "keep");
   });
 });
@@ -68,6 +87,7 @@ describe("menu stats", () => {
         arrowsRemaining: 2,
         arrowsTotal: 3,
         levelsCleared: 4,
+        chances: MAX_STRIKES,
       },
     );
   });
@@ -83,6 +103,154 @@ describe("menu stats", () => {
     assert.equal(stats.levelNumber, 1);
     assert.equal(stats.arrowsRemaining, 0);
     assert.equal(stats.levelsCleared, 1);
+    assert.equal(stats.chances, MAX_STRIKES);
+  });
+
+  it("reports remaining chances from strikes", () => {
+    const stats = menuStats({
+      levelIndex: 0,
+      moves: 1,
+      arrows: [{ state: "idle" }],
+      packSize: 10,
+      strikes: 2,
+    });
+    assert.equal(stats.chances, 1);
+  });
+});
+
+describe("strikes and stars", () => {
+  it("treats arrow count as par and rates extras 0/1/2+", () => {
+    assert.equal(minMovesForArrows([{ id: 1 }, { id: 2 }, { id: 3 }]), 3);
+    assert.equal(STAR_EXTRA_FOR_TWO, 1);
+    assert.equal(starsForClear(10, 10), 3);
+    assert.equal(starsForClear(10, 9), 3);
+    assert.equal(starsForClear(10, 11), 2);
+    assert.equal(starsForClear(10, 12), 1);
+    assert.equal(starsForClear(10, 20), 1);
+  });
+
+  it("treats non-finite or negative inputs as empty runs", () => {
+    assert.equal(starsForClear(NaN, NaN), 3);
+    assert.equal(starsForClear(-4, -1), 3);
+    assert.equal(starsForClear(undefined, 2), 1);
+  });
+
+  it("fails after MAX_STRIKES blocked taps and clamps chances", () => {
+    assert.equal(MAX_STRIKES, 3);
+    assert.equal(hasFailed(2), false);
+    assert.equal(hasFailed(3), true);
+    assert.equal(hasFailed(8), true);
+    assert.equal(chancesLeft(0), 3);
+    assert.equal(chancesLeft(3), 0);
+    assert.equal(chancesLeft(10), 0);
+    assert.equal(chancesLeft(-2), 3);
+    assert.equal(chancesLeft(NaN), 3);
+  });
+});
+
+describe("star records", () => {
+  it("round-trips best stars and unlocked index", () => {
+    const raw = serializeStarRecords({ best: { 0: 3, 2: 1 }, unlocked: 4 });
+    assert.deepEqual(JSON.parse(raw), { best: { 0: 3, 2: 1 }, unlocked: 4 });
+    const parsed = parseStarRecords(raw);
+    assert.equal(starsForLevel(parsed, 0), 3);
+    assert.equal(starsForLevel(parsed, 1), 0);
+    assert.equal(starsForLevel(parsed, 2), 1);
+    assert.equal(parsed.unlocked, 4);
+  });
+
+  it("returns empty records for missing or junk payloads", () => {
+    assert.deepEqual(parseStarRecords(null), emptyStarRecords());
+    assert.deepEqual(parseStarRecords(""), emptyStarRecords());
+    assert.deepEqual(parseStarRecords("{"), emptyStarRecords());
+    assert.deepEqual(parseStarRecords("null"), emptyStarRecords());
+    assert.deepEqual(parseStarRecords("[]"), emptyStarRecords());
+    assert.deepEqual(parseStarRecords("0"), emptyStarRecords());
+    assert.deepEqual(parseStarRecords('"nope"'), emptyStarRecords());
+  });
+
+  it("drops invalid best entries and repairs unlocked from stars", () => {
+    const parsed = parseStarRecords(
+      JSON.stringify({
+        best: { "-1": 3, foo: 2, 0: 0, 1: 4, 2: 2.8, 3: 1, 5: "nope" },
+        unlocked: -9,
+      }),
+    );
+    assert.deepEqual(parsed.best, { 2: 2, 3: 1 });
+    assert.equal(parsed.unlocked, 4);
+  });
+
+  it("treats a missing or non-object best as empty", () => {
+    assert.deepEqual(parseStarRecords(JSON.stringify({ unlocked: 2 })), {
+      best: {},
+      unlocked: 2,
+    });
+    assert.deepEqual(parseStarRecords(JSON.stringify({ best: [3], unlocked: 1 })), {
+      best: {},
+      unlocked: 1,
+    });
+    assert.deepEqual(parseStarRecords(JSON.stringify({ best: null, unlocked: "x" })), {
+      best: {},
+      unlocked: 0,
+    });
+  });
+
+  it("serializes missing records as empty and ignores array best", () => {
+    assert.equal(serializeStarRecords(null), JSON.stringify({ best: {}, unlocked: 0 }));
+    assert.equal(serializeStarRecords(undefined), JSON.stringify({ best: {}, unlocked: 0 }));
+    assert.equal(
+      serializeStarRecords({ best: [1], unlocked: -3 }),
+      JSON.stringify({ best: {}, unlocked: 0 }),
+    );
+  });
+
+  it("keeps the higher star rating and unlocks the next level", () => {
+    let rec = emptyStarRecords();
+    rec = recordLevelStars(rec, 0, 1);
+    assert.equal(starsForLevel(rec, 0), 1);
+    assert.equal(rec.unlocked, 1);
+    rec = recordLevelStars(rec, 0, 3);
+    assert.equal(starsForLevel(rec, 0), 3);
+    rec = recordLevelStars(rec, 0, 2);
+    assert.equal(starsForLevel(rec, 0), 3);
+    rec = recordLevelStars(rec, 2.7, 9);
+    assert.equal(starsForLevel(rec, 2), 3);
+    assert.equal(rec.unlocked, 3);
+  });
+
+  it("unlocks a jumped-to index without clearing stars", () => {
+    const rec = withUnlocked({ best: { 0: 2 }, unlocked: 1 }, 6);
+    assert.equal(rec.best[0], 2);
+    assert.equal(rec.unlocked, 6);
+    assert.equal(withUnlocked(rec, -4).unlocked, 6);
+    assert.equal(withUnlocked(emptyStarRecords(), NaN).unlocked, 0);
+  });
+
+  it("unlocks level 0 by default and later indices only when reached", () => {
+    const rec = { best: { 0: 3 }, unlocked: 2 };
+    assert.equal(isLevelUnlocked(rec, 0), true);
+    assert.equal(isLevelUnlocked(rec, 2), true);
+    assert.equal(isLevelUnlocked(rec, 3), false);
+  });
+
+  it("wraps next level to 0 at the end of the pack", () => {
+    assert.equal(nextLevelIndex(4, 10), 5);
+    assert.equal(nextLevelIndex(9, 10), 0);
+    assert.equal(nextLevelIndex(0, 1), 0);
+    assert.equal(nextLevelIndex(3, 0), 0);
+    assert.equal(nextLevelIndex(3, NaN), 0);
+  });
+
+  it("builds level-select rows with stars and lock state", () => {
+    const rec = { best: { 0: 3, 1: 1 }, unlocked: 2 };
+    assert.deepEqual(levelSelectItems(rec, 4), [
+      { index: 0, number: 1, stars: 3, unlocked: true, completed: true },
+      { index: 1, number: 2, stars: 1, unlocked: true, completed: true },
+      { index: 2, number: 3, stars: 0, unlocked: true, completed: false },
+      { index: 3, number: 4, stars: 0, unlocked: false, completed: false },
+    ]);
+    assert.deepEqual(levelSelectItems(rec, -2), []);
+    assert.deepEqual(levelSelectItems(rec, NaN), []);
   });
 });
 
