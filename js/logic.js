@@ -27,6 +27,75 @@ export const TURNS = {
   W: ["N", "S"],
 };
 
+/** @type {Record<Dir, Dir>} */
+export const OPPOSITE = {
+  N: "S",
+  E: "W",
+  S: "N",
+  W: "E",
+};
+
+/**
+ * Cardinal step from cell `a` to `b`, or null if they are not orthogonal neighbors.
+ * @param {Cell | [number, number]} a
+ * @param {Cell | [number, number]} b
+ * @returns {Dir | null}
+ */
+export function dirBetween(a, b) {
+  const ax = Array.isArray(a) ? a[0] : a.x;
+  const ay = Array.isArray(a) ? a[1] : a.y;
+  const bx = Array.isArray(b) ? b[0] : b.x;
+  const by = Array.isArray(b) ? b[1] : b.y;
+  const dx = bx - ax;
+  const dy = by - ay;
+  if (dx === 1 && dy === 0) return "E";
+  if (dx === -1 && dy === 0) return "W";
+  if (dx === 0 && dy === 1) return "S";
+  if (dx === 0 && dy === -1) return "N";
+  return null;
+}
+
+/**
+ * Step directions along a polyline (skips non-orthogonal pairs).
+ * @param {Array<Cell | [number, number]>} path
+ * @returns {Dir[]}
+ */
+export function pathStepDirs(path) {
+  /** @type {Dir[]} */
+  const dirs = [];
+  for (let i = 1; i < path.length; i++) {
+    const d = dirBetween(path[i - 1], path[i]);
+    if (d) dirs.push(d);
+  }
+  return dirs;
+}
+
+/**
+ * Number of times the polyline changes cardinal direction.
+ * @param {Array<Cell | [number, number]>} path
+ */
+export function countPathTurns(path) {
+  const dirs = pathStepDirs(path);
+  let n = 0;
+  for (let i = 1; i < dirs.length; i++) {
+    if (dirs[i] !== dirs[i - 1]) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Whether the snake travels both a direction and its opposite (U-turn / S-curve).
+ * @param {Array<Cell | [number, number]>} path
+ */
+export function pathHasReversal(path) {
+  const seen = new Set();
+  for (const d of pathStepDirs(path)) {
+    if (seen.has(OPPOSITE[d])) return true;
+    seen.add(d);
+  }
+  return false;
+}
+
 /**
  * @param {number} x
  * @param {number} y

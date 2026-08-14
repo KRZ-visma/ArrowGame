@@ -11,7 +11,74 @@ import {
   isSolvable,
   stuckArrows,
   canEscapeAmong,
+  dirBetween,
+  pathStepDirs,
+  countPathTurns,
+  pathHasReversal,
 } from "../js/logic.js";
+
+describe("dirBetween / path turns", () => {
+  it("names the four cardinal steps and rejects diagonals", () => {
+    assert.equal(dirBetween([0, 0], [1, 0]), "E");
+    assert.equal(dirBetween([1, 0], [0, 0]), "W");
+    assert.equal(dirBetween([0, 0], [0, 1]), "S");
+    assert.equal(dirBetween([0, 1], [0, 0]), "N");
+    assert.equal(dirBetween([0, 0], [1, 1]), null);
+    assert.equal(dirBetween({ x: 2, y: 2 }, { x: 2, y: 1 }), "N");
+    assert.equal(dirBetween({ x: 2, y: 2 }, { x: 2, y: 2 }), null);
+  });
+
+  it("counts bends and detects reversals along a polyline", () => {
+    assert.equal(countPathTurns([[0, 0]]), 0);
+    assert.equal(countPathTurns([[0, 0], [1, 0], [2, 0]]), 0);
+    assert.equal(
+      countPathTurns([
+        [0, 1],
+        [0, 0],
+        [1, 0],
+      ]),
+      1,
+    );
+    assert.equal(
+      countPathTurns([
+        [2, 0],
+        [1, 0],
+        [0, 0],
+        [0, 1],
+        [1, 1],
+      ]),
+      2,
+    );
+    assert.equal(pathHasReversal([[0, 0], [1, 0], [2, 0]]), false);
+    assert.equal(
+      pathHasReversal([
+        [0, 1],
+        [0, 0],
+        [1, 0],
+      ]),
+      false,
+    );
+    assert.equal(
+      pathHasReversal([
+        [2, 1],
+        [1, 1],
+        [0, 1],
+        [0, 0],
+        [1, 0],
+        [2, 0],
+      ]),
+      true,
+    );
+    assert.deepEqual(pathStepDirs([[0, 0], [2, 0], [3, 0]]), ["E"]);
+    assert.deepEqual(
+      pathStepDirs([
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+      ]),
+      ["S"],
+    );
+  });
+});
 
 describe("stepsToExit", () => {
   it("counts cells until off-board in each direction", () => {

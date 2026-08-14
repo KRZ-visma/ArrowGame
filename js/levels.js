@@ -7,6 +7,8 @@ export {
   levelParamsForIndex,
   buildLevelForIndex,
   repairToSolvable,
+  levelComplexity,
+  orderLevelsByComplexity,
 } from "./level-build.js";
 export { LEVEL_PACK } from "./levels-data.js";
 import { LEVEL_PACK } from "./levels-data.js";
