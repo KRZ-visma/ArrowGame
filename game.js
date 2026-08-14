@@ -475,8 +475,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  min-height: 48px;
+  gap: 0.12rem;
+  min-height: 52px;
   padding: 0.35rem 0.2rem 0.3rem;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -508,19 +508,21 @@ body {
 
 .level-pips {
   display: flex;
-  gap: 0.18rem;
+  justify-content: center;
+  gap: 0.06rem;
+  line-height: 1;
 }
 
 .level-pip {
   flex-shrink: 0;
-  width: 0.58rem;
-  height: 0.58rem;
-  background: rgba(244, 244, 240, 0.2);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1;
+  color: rgba(244, 244, 240, 0.22);
 }
 
 .level-pip.filled {
-  background: var(--accent);
+  color: var(--accent);
 }
 
 .overlay-card-levels .menu-actions {
@@ -1270,6 +1272,7 @@ function openLevels() {
     for (let s = 1; s <= 3; s++) {
       const pip = document.createElement("span");
       pip.className = s <= item.stars ? "level-pip filled" : "level-pip";
+      pip.textContent = "★";
       pips.appendChild(pip);
     }
     btn.append(num, pips);
