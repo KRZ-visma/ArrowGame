@@ -4,8 +4,14 @@ import {
   snakePositions,
   snakeExitDistance,
 } from "./js/logic.js";
-import { getLevelData } from "./js/levels.js";
-import { STORAGE_KEY, parseLevelIndex, serializeLevelIndex } from "./js/progress.js";
+import { getLevelData, LEVEL_PACK } from "./js/levels.js";
+import {
+  STORAGE_KEY,
+  parseLevelIndex,
+  serializeLevelIndex,
+  clearAllProgress,
+  menuStats,
+} from "./js/progress.js";
 
 const STYLE = `:root {
   --bg-0: #050505;
@@ -85,6 +91,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  min-width: 0;
 }
 
 .brand-mark {
@@ -102,6 +109,13 @@ body {
   letter-spacing: 0.04em;
   line-height: 1;
   font-weight: 400;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
 }
 
 .icon-btn {
@@ -219,6 +233,16 @@ body {
   transform: none;
 }
 
+.btn-danger {
+  border-color: rgba(255, 90, 60, 0.45);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  border-color: var(--danger);
+  background: rgba(255, 90, 60, 0.1);
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -267,6 +291,57 @@ body {
   margin: 0 0 1.4rem;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.overlay-menu {
+  z-index: 30;
+}
+
+.overlay-card-menu {
+  width: min(22rem, 100%);
+  text-align: left;
+}
+
+.menu-stats {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0 0 1.4rem;
+}
+
+.menu-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.menu-stat dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.menu-stat dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.menu-actions .btn {
+  width: 100%;
 }
 
 @keyframes fade-down {
@@ -354,14 +429,23 @@ function buildUI() {
         <span class="brand-mark" aria-hidden="true"></span>
         <h1 class="brand-name">ARROW OUT</h1>
       </div>
-      <button type="button" class="icon-btn" id="btnReset" title="Reset level" aria-label="Reset level">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-          <path d="M21 3v5h-5" />
-          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-          <path d="M3 21v-5h5" />
-        </svg>
-      </button>
+      <div class="top-actions">
+        <button type="button" class="icon-btn" id="btnMenu" title="Menu" aria-label="Menu" aria-haspopup="dialog" aria-controls="menuOverlay" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 7h16" />
+            <path d="M4 12h16" />
+            <path d="M4 17h16" />
+          </svg>
+        </button>
+        <button type="button" class="icon-btn" id="btnReset" title="Reset level" aria-label="Reset level">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M3 21v-5h5" />
+          </svg>
+        </button>
+      </div>
     </header>
     <main class="stage">
       <div class="board-wrap">
@@ -375,6 +459,45 @@ function buildUI() {
         <h2 class="overlay-title" id="winTitle">Level complete</h2>
         <p class="overlay-copy" id="winCopy">Every arrow found its way out.</p>
         <button type="button" class="btn btn-primary" id="btnNext">Next level</button>
+      </div>
+    </div>
+    <div class="overlay overlay-menu" id="menuOverlay" hidden>
+      <div class="overlay-card overlay-card-menu" id="menuDialog" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+        <div id="menuMain">
+          <p class="overlay-kicker">Status</p>
+          <h2 class="overlay-title" id="menuTitle">Level 1</h2>
+          <dl class="menu-stats">
+            <div class="menu-stat">
+              <dt>Level</dt>
+              <dd id="statLevel">1 / 100</dd>
+            </div>
+            <div class="menu-stat">
+              <dt>Moves</dt>
+              <dd id="statMoves">0</dd>
+            </div>
+            <div class="menu-stat">
+              <dt>Arrows left</dt>
+              <dd id="statArrows">0 / 0</dd>
+            </div>
+            <div class="menu-stat">
+              <dt>Levels cleared</dt>
+              <dd id="statCleared">0</dd>
+            </div>
+          </dl>
+          <div class="menu-actions">
+            <button type="button" class="btn" id="btnCloseMenu">Close</button>
+            <button type="button" class="btn btn-danger" id="btnClearProgress">Clear all progress</button>
+          </div>
+        </div>
+        <div id="menuConfirm" hidden>
+          <p class="overlay-kicker">Start over</p>
+          <h2 class="overlay-title">Reset everything?</h2>
+          <p class="overlay-copy">Clears saved progress and returns you to Level 1. This cannot be undone.</p>
+          <div class="menu-actions">
+            <button type="button" class="btn" id="btnCancelClear">Cancel</button>
+            <button type="button" class="btn btn-danger" id="btnConfirmClear">Start over</button>
+          </div>
+        </div>
       </div>
     </div>`;
 }
@@ -404,6 +527,19 @@ const winTitle = document.getElementById("winTitle");
 const winCopy = document.getElementById("winCopy");
 const btnReset = document.getElementById("btnReset");
 const btnNext = document.getElementById("btnNext");
+const btnMenu = document.getElementById("btnMenu");
+const menuOverlay = document.getElementById("menuOverlay");
+const menuMain = document.getElementById("menuMain");
+const menuConfirm = document.getElementById("menuConfirm");
+const menuTitle = document.getElementById("menuTitle");
+const statLevel = document.getElementById("statLevel");
+const statMoves = document.getElementById("statMoves");
+const statArrows = document.getElementById("statArrows");
+const statCleared = document.getElementById("statCleared");
+const btnCloseMenu = document.getElementById("btnCloseMenu");
+const btnClearProgress = document.getElementById("btnClearProgress");
+const btnCancelClear = document.getElementById("btnCancelClear");
+const btnConfirmClear = document.getElementById("btnConfirmClear");
 
 const state = {
   levelIndex: 0,
@@ -762,7 +898,70 @@ canvas.addEventListener("pointercancel", (e) => {
 btnReset.addEventListener("click", () => startLevel(state.levelIndex));
 btnNext.addEventListener("click", () => startLevel(state.levelIndex + 1));
 
+function refreshMenuStats() {
+  const stats = menuStats({
+    levelIndex: state.levelIndex,
+    moves: state.moves,
+    arrows: state.arrows,
+    packSize: LEVEL_PACK.length,
+    won: state.won,
+  });
+  menuTitle.textContent = `Level ${stats.levelNumber}`;
+  statLevel.textContent = `${stats.levelNumber} / ${stats.packSize}`;
+  statMoves.textContent = String(stats.moves);
+  statArrows.textContent = `${stats.arrowsRemaining} / ${stats.arrowsTotal}`;
+  statCleared.textContent = String(stats.levelsCleared);
+}
+
+function showMenuConfirm(confirming) {
+  menuMain.hidden = confirming;
+  menuConfirm.hidden = !confirming;
+  if (menuOverlay.hidden) return;
+  if (confirming) btnCancelClear.focus();
+  else btnCloseMenu.focus();
+}
+
+function closeMenu() {
+  menuOverlay.hidden = true;
+  btnMenu.setAttribute("aria-expanded", "false");
+  showMenuConfirm(false);
+}
+
+function openMenu() {
+  refreshMenuStats();
+  showMenuConfirm(false);
+  menuOverlay.hidden = false;
+  btnMenu.setAttribute("aria-expanded", "true");
+  btnCloseMenu.focus();
+}
+
+btnMenu.addEventListener("click", () => {
+  if (menuOverlay.hidden) openMenu();
+  else closeMenu();
+});
+btnCloseMenu.addEventListener("click", () => closeMenu());
+btnClearProgress.addEventListener("click", () => showMenuConfirm(true));
+btnCancelClear.addEventListener("click", () => showMenuConfirm(false));
+btnConfirmClear.addEventListener("click", () => {
+  try {
+    clearAllProgress(localStorage);
+  } catch {
+    /* ignore */
+  }
+  closeMenu();
+  startLevel(0);
+});
+menuOverlay.addEventListener("click", (e) => {
+  if (e.target === menuOverlay) closeMenu();
+});
+
 window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !menuOverlay.hidden) {
+    if (!menuConfirm.hidden) showMenuConfirm(false);
+    else closeMenu();
+    return;
+  }
+  if (!menuOverlay.hidden) return;
   if (e.key === "r" || e.key === "R") {
     startLevel(state.levelIndex);
   } else if (e.key === "n" || e.key === "N") {

@@ -24,7 +24,7 @@ Then open `http://localhost:8080`.
 - `game.js` — UI, styles, canvas, input
 - `js/logic.js` — escape / occupancy rules
 - `js/levels.js` — tutorial, hand pack, seeded generator
-- `js/progress.js` — `localStorage` + undo snapshots
+- `js/progress.js` — `localStorage` + undo snapshots + menu stats / clear-all
 
 ## Tests
 
@@ -34,4 +34,4 @@ npm test
 
 ## Controls
 
-Click / tap · Undo · Reset · Skip · `Ctrl/Cmd+Z` · `R`
+Click / tap · Menu · Reset · Skip · `Ctrl/Cmd+Z` · `R`

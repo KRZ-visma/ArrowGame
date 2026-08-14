@@ -1,6 +1,44 @@
 /** Persisted level index — do not rename without a migration. */
 export const STORAGE_KEY = "arrow-out-level";
 
+/** Keys owned by the game. Clear-all removes every entry here. */
+export const STORAGE_KEYS = Object.freeze([STORAGE_KEY]);
+
+/**
+ * Wipe saved progress (level index and any future keys in STORAGE_KEYS).
+ * Does not restart the in-memory game — the caller should start level 0.
+ * @param {{ removeItem: (key: string) => void }} storage
+ */
+export function clearAllProgress(storage) {
+  for (const key of STORAGE_KEYS) {
+    storage.removeItem(key);
+  }
+}
+
+/**
+ * Numbers for the Menu overlay. `levelNumber` is 1-based.
+ * `levelsCleared` counts finished levels; include the current one when `won`.
+ * @param {{
+ *   levelIndex: number,
+ *   moves: number,
+ *   arrows: Array<{ state: string }>,
+ *   packSize: number,
+ *   won?: boolean,
+ * }} input
+ */
+export function menuStats({ levelIndex, moves, arrows, packSize, won = false }) {
+  const arrowsTotal = arrows.length;
+  const arrowsRemaining = arrows.filter((a) => a.state !== "gone").length;
+  return {
+    levelNumber: levelIndex + 1,
+    packSize,
+    moves,
+    arrowsRemaining,
+    arrowsTotal,
+    levelsCleared: levelIndex + (won ? 1 : 0),
+  };
+}
+
 /**
  * @param {string | null | undefined} raw
  * @returns {number | null}

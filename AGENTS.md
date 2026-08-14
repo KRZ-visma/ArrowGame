@@ -8,7 +8,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 
 - Vanilla HTML / CSS / JS — no framework, bundler, or TypeScript unless explicitly requested
 - Native ES modules (`type="module"`) — no bundler
-- Storage key: `arrow-out-level` (do not break without a migration)
+- Storage key: `arrow-out-level` (do not break without a migration). Owned keys live in `STORAGE_KEYS`; clear-all must remove every entry there
 - UI copy language: **English**
 - Unit tests: Node’s built-in test runner (`npm test` → `node --test test/`)
 - Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100)
@@ -18,10 +18,10 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Domain | File(s) | Notes / tests |
 | --- | --- | --- |
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
-| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD, pointer/keyboard |
+| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD, Menu overlay, pointer/keyboard |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy — **unit tests** |
 | Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places multi-cell puzzle arrows (tails in center zone) then fills all empty cells with single-cell arrows via `fillEmptyCells`; TUTORIAL is built via `buildTutorial()` for consistency — **unit tests** |
-| Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON — **unit tests** |
+| Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
 | Agent instructions | `AGENTS.md` | Conventions, workflow, pitfalls — **update when a PR teaches something new** (see below) |
@@ -34,6 +34,7 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - No generic AI look (purple gradients, cream + terracotta, broadsheet)
 - One job per section; board is the hero — no card clutter in the play surface
 - **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
+- **Reset vs Menu** — the toolbar Reset button restarts the **current** level only. Level number, stats, and “start over from zero” live in the Menu overlay (`btnMenu`). Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level`) then starts level 0; do not fold that into Reset
 
 ## Workflow
 
