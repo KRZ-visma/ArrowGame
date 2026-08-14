@@ -179,3 +179,58 @@ export function canEscape(arrow, size, arrows) {
   const occ = buildOccupancy(arrows, arrow.id);
   return canEscapePath(arrow.path, arrow.dir, size, new Set(occ.keys()));
 }
+
+/**
+ * Occupancy of `arrows` excluding `skip`'s own cells.
+ * @param {Array<{ path: Array<Cell | [number, number]> }>} arrows
+ * @param {{ path: Array<Cell | [number, number]> }} skip
+ * @returns {Set<string>}
+ */
+function foreignOccupied(arrows, skip) {
+  const self = new Set(normalizePath(skip.path).map((c) => cellKey(c.x, c.y)));
+  const occupied = new Set();
+  for (const a of arrows) {
+    if (a === skip) continue;
+    for (const c of normalizePath(a.path)) {
+      const k = cellKey(c.x, c.y);
+      if (!self.has(k)) occupied.add(k);
+    }
+  }
+  return occupied;
+}
+
+/**
+ * Whether `arrow` can leave given the other arrows in `group`.
+ *
+ * @param {{ dir: Dir, path: Array<Cell | [number, number]> }} arrow
+ * @param {number} size
+ * @param {Array<{ dir: Dir, path: Array<Cell | [number, number]> }>} group
+ */
+export function canEscapeAmong(arrow, size, group) {
+  return canEscapePath(arrow.path, arrow.dir, size, foreignOccupied(group, arrow));
+}
+
+/**
+ * Arrows that remain when no more can leave. Empty means the puzzle is solvable:
+ * a free arrow only vacates cells, so greedy removal is safe.
+ *
+ * @param {number} size
+ * @param {Array<{ dir: Dir, path: Array<Cell | [number, number]> }>} arrows
+ */
+export function stuckArrows(size, arrows) {
+  const remaining = arrows.slice();
+  while (remaining.length > 0) {
+    const idx = remaining.findIndex((arrow) => canEscapeAmong(arrow, size, remaining));
+    if (idx < 0) return remaining;
+    remaining.splice(idx, 1);
+  }
+  return remaining;
+}
+
+/**
+ * @param {number} size
+ * @param {Array<{ dir: Dir, path: Array<Cell | [number, number]> }>} arrows
+ */
+export function isSolvable(size, arrows) {
+  return stuckArrows(size, arrows).length === 0;
+}

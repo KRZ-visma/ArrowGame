@@ -11,6 +11,7 @@ import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildLevelForIndex } from "../js/level-build.js";
+import { isSolvable } from "../js/logic.js";
 
 const DEFAULT_COUNT = 100;
 const rawCount = process.argv[2];
@@ -23,7 +24,12 @@ if (!Number.isFinite(count) || count < 1 || !Number.isInteger(count)) {
 
 const levels = [];
 for (let i = 0; i < count; i += 1) {
-  levels.push(buildLevelForIndex(i));
+  const level = buildLevelForIndex(i);
+  if (!isSolvable(level.size, level.arrows)) {
+    console.error(`Generated level ${i + 1} (index ${i}) is unsolvable`);
+    process.exit(1);
+  }
+  levels.push(level);
   if ((i + 1) % 25 === 0 || i + 1 === count) {
     process.stderr.write(`Generated ${i + 1}/${count} levels\n`);
   }

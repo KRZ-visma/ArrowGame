@@ -6,6 +6,7 @@ export {
   HAND_LEVEL_SPECS,
   levelParamsForIndex,
   buildLevelForIndex,
+  repairToSolvable,
 } from "./level-build.js";
 export { LEVEL_PACK } from "./levels-data.js";
 import { LEVEL_PACK } from "./levels-data.js";

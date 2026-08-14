@@ -1254,14 +1254,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            8,
+            7,
             2
           ],
           [
-            7,
+            8,
             2
           ]
         ]
@@ -1654,23 +1654,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            3,
-            6
-          ],
-          [
-            3,
-            5
-          ],
-          [
-            4,
-            5
-          ],
           [
             4,
             4
+          ],
+          [
+            4,
+            5
+          ],
+          [
+            3,
+            5
+          ],
+          [
+            3,
+            6
           ]
         ]
       },
@@ -1837,27 +1837,27 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            3,
+            4,
             3
           ],
           [
-            4,
+            3,
             3
           ]
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             3
           ],
           [
-            6,
+            5,
             3
           ]
         ]
@@ -2660,14 +2660,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             7
           ],
           [
-            5,
+            4,
             7
           ]
         ]
@@ -4301,7 +4301,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
@@ -6681,14 +6681,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             6
           ],
           [
-            6,
+            5,
             6
           ]
         ]
@@ -6787,7 +6787,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
@@ -6818,7 +6818,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             4,
@@ -7595,15 +7595,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            4
+            5
           ],
           [
             5,
-            5
+            4
           ]
         ]
       },
@@ -7658,14 +7658,14 @@ export const LEVEL_PACK = [
     "size": 13,
     "arrows": [
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            3,
+            4,
             5
           ],
           [
-            4,
+            3,
             5
           ]
         ]
@@ -8586,7 +8586,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             3,
@@ -8653,23 +8653,23 @@ export const LEVEL_PACK = [
     "size": 14,
     "arrows": [
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
-          [
-            4,
-            5
-          ],
-          [
-            4,
-            6
-          ],
-          [
-            5,
-            6
-          ],
           [
             5,
             7
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            4,
+            5
           ]
         ]
       },
@@ -8778,15 +8778,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            5
+            6
           ],
           [
             7,
-            6
+            5
           ]
         ]
       },
@@ -9337,15 +9337,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             4,
-            7
+            6
           ],
           [
             4,
-            6
+            7
           ]
         ]
       },
@@ -9877,23 +9877,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
-            10,
-            9
-          ],
-          [
-            10,
-            8
-          ],
-          [
-            10,
-            7
-          ],
-          [
             9,
-            7
+            5
           ],
           [
             9,
@@ -9901,24 +9889,28 @@ export const LEVEL_PACK = [
           ],
           [
             9,
-            5
+            7
+          ],
+          [
+            10,
+            7
+          ],
+          [
+            10,
+            8
+          ],
+          [
+            10,
+            9
           ]
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
-            7,
-            11
-          ],
-          [
-            7,
-            10
-          ],
-          [
             8,
-            10
+            8
           ],
           [
             8,
@@ -9926,7 +9918,15 @@ export const LEVEL_PACK = [
           ],
           [
             8,
-            8
+            10
+          ],
+          [
+            7,
+            10
+          ],
+          [
+            7,
+            11
           ]
         ]
       },
@@ -10433,27 +10433,27 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             4
           ],
           [
-            6,
+            5,
             4
           ]
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            8,
+            9,
             4
           ],
           [
-            9,
+            8,
             4
           ]
         ]
@@ -10660,14 +10660,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            8,
+            9,
             8
           ],
           [
-            9,
+            8,
             8
           ]
         ]
@@ -10707,10 +10707,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            8,
+            6,
             5
           ],
           [
@@ -10718,7 +10718,7 @@ export const LEVEL_PACK = [
             5
           ],
           [
-            6,
+            8,
             5
           ]
         ]
@@ -11346,15 +11346,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
-            8
+            9
           ],
           [
             10,
-            9
+            8
           ]
         ]
       },
@@ -11421,15 +11421,15 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            6
+            7
           ],
           [
             6,
-            7
+            6
           ]
         ]
       },
@@ -11451,15 +11451,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             5,
-            11
+            10
           ],
           [
             5,
-            10
+            11
           ]
         ]
       },
@@ -11719,14 +11719,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            8,
+            9,
             7
           ],
           [
-            9,
+            8,
             7
           ]
         ]
@@ -12154,23 +12154,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
-          [
-            6,
-            6
-          ],
-          [
-            6,
-            7
-          ],
-          [
-            7,
-            7
-          ],
           [
             7,
             8
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            6
           ]
         ]
       },
@@ -12200,23 +12200,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            6,
-            11
-          ],
-          [
-            6,
-            10
-          ],
-          [
-            5,
-            10
-          ],
           [
             5,
             9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            6,
+            10
+          ],
+          [
+            6,
+            11
           ]
         ]
       },
@@ -12322,15 +12322,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             8,
-            8
+            9
           ],
           [
             8,
-            9
+            8
           ]
         ]
       },
@@ -13379,15 +13379,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             5,
-            10
+            9
           ],
           [
             5,
-            9
+            10
           ]
         ]
       },
@@ -13803,14 +13803,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             5
           ],
           [
-            5,
+            4,
             5
           ]
         ]
@@ -14607,19 +14607,19 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
-            7,
-            11
+            6,
+            6
+          ],
+          [
+            6,
+            7
           ],
           [
             7,
-            10
-          ],
-          [
-            7,
-            9
+            7
           ],
           [
             7,
@@ -14627,15 +14627,15 @@ export const LEVEL_PACK = [
           ],
           [
             7,
-            7
+            9
           ],
           [
-            6,
-            7
+            7,
+            10
           ],
           [
-            6,
-            6
+            7,
+            11
           ]
         ]
       },
@@ -15075,15 +15075,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            6
+            7
           ],
           [
             5,
-            7
+            6
           ]
         ]
       },
@@ -15255,14 +15255,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            9,
+            8,
             7
           ],
           [
-            8,
+            9,
             7
           ]
         ]
@@ -15503,10 +15503,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            8,
+            6,
             5
           ],
           [
@@ -15514,7 +15514,7 @@ export const LEVEL_PACK = [
             5
           ],
           [
-            6,
+            8,
             5
           ]
         ]
@@ -15749,15 +15749,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            4
+            5
           ],
           [
             5,
-            5
+            4
           ]
         ]
       },
@@ -15871,14 +15871,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             8
           ],
           [
-            6,
+            5,
             8
           ]
         ]
@@ -16715,23 +16715,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
-          [
-            5,
-            6
-          ],
-          [
-            6,
-            6
-          ],
-          [
-            6,
-            7
-          ],
           [
             7,
             7
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            5,
+            6
           ]
         ]
       },
@@ -17151,28 +17151,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             5
           ],
           [
-            5,
+            4,
             5
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             8,
-            5
+            6
           ],
           [
             8,
-            6
+            5
           ]
         ]
       },
@@ -17389,24 +17389,24 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            8,
+            7,
             9
           ],
           [
-            7,
+            8,
             9
           ]
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             8,
-            8
+            6
           ],
           [
             8,
@@ -17414,7 +17414,7 @@ export const LEVEL_PACK = [
           ],
           [
             8,
-            6
+            8
           ]
         ]
       },
@@ -18014,14 +18014,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            11,
+            10,
             8
           ],
           [
-            10,
+            11,
             8
           ]
         ]
@@ -18603,14 +18603,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            6,
+            7,
             7
           ],
           [
-            7,
+            6,
             7
           ]
         ]
@@ -18637,15 +18637,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            7
+            8
           ],
           [
             9,
-            8
+            7
           ]
         ]
       },
@@ -19249,15 +19249,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            5
-          ],
-          [
-            5,
-            6
+            8
           ],
           [
             5,
@@ -19265,7 +19261,11 @@ export const LEVEL_PACK = [
           ],
           [
             5,
-            8
+            6
+          ],
+          [
+            5,
+            5
           ]
         ]
       },
@@ -19299,10 +19299,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            8,
+            6,
             9
           ],
           [
@@ -19310,7 +19310,7 @@ export const LEVEL_PACK = [
             9
           ],
           [
-            6,
+            8,
             9
           ]
         ]
@@ -19488,14 +19488,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            7,
+            6,
             10
           ],
           [
-            6,
+            7,
             10
           ]
         ]
@@ -19750,15 +19750,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            9
+            10
           ],
           [
             5,
-            10
+            9
           ]
         ]
       },
@@ -19841,15 +19841,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            5
+            6
           ],
           [
             7,
-            6
+            5
           ]
         ]
       },
@@ -19984,23 +19984,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            7,
-            10
-          ],
-          [
-            7,
-            9
-          ],
-          [
-            6,
-            9
-          ],
           [
             6,
             8
+          ],
+          [
+            6,
+            9
+          ],
+          [
+            7,
+            9
+          ],
+          [
+            7,
+            10
           ]
         ]
       },
@@ -20060,15 +20060,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             6,
-            7
+            6
           ],
           [
             6,
-            6
+            7
           ]
         ]
       },
@@ -20974,28 +20974,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             7
           ],
           [
-            5,
+            4,
             7
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             8,
-            7
+            8
           ],
           [
             8,
-            8
+            7
           ]
         ]
       },
@@ -21834,14 +21834,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            7,
+            8,
             5
           ],
           [
-            8,
+            7,
             5
           ]
         ]
@@ -22112,14 +22112,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            8,
+            9,
             10
           ],
           [
-            9,
+            8,
             10
           ]
         ]
@@ -22175,54 +22175,54 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
+          [
+            6,
+            5
+          ],
           [
             6,
             4
-          ],
-          [
-            6,
-            5
           ]
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
-          [
-            4,
-            5
-          ],
           [
             5,
             5
+          ],
+          [
+            4,
+            5
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            5
+            6
           ],
           [
             9,
-            6
+            5
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
-            5
+            6
           ],
           [
             10,
-            6
+            5
           ]
         ]
       },
@@ -22315,7 +22315,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             7,
@@ -23058,14 +23058,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            8,
-            9
-          ],
-          [
-            7,
+            5,
             9
           ],
           [
@@ -23073,7 +23069,11 @@ export const LEVEL_PACK = [
             9
           ],
           [
-            5,
+            7,
+            9
+          ],
+          [
+            8,
             9
           ]
         ]
@@ -23671,23 +23671,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
-          [
-            8,
-            8
-          ],
-          [
-            7,
-            8
-          ],
-          [
-            7,
-            9
-          ],
           [
             6,
             9
+          ],
+          [
+            7,
+            9
+          ],
+          [
+            7,
+            8
+          ],
+          [
+            8,
+            8
           ]
         ]
       },
@@ -23835,15 +23835,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            6
+            7
           ],
           [
             5,
-            7
+            6
           ]
         ]
       },
@@ -24299,14 +24299,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            8,
+            9,
             5
           ],
           [
-            9,
+            8,
             5
           ]
         ]
@@ -25352,15 +25352,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            7
+            8
           ],
           [
             6,
-            8
+            7
           ]
         ]
       },
@@ -25391,14 +25391,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             9
           ],
           [
-            6,
+            5,
             9
           ]
         ]
@@ -25431,31 +25431,31 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
-          [
-            5,
-            8
-          ],
-          [
-            6,
-            8
-          ],
-          [
-            6,
-            7
-          ],
-          [
-            7,
-            7
-          ],
-          [
-            7,
-            6
-          ],
           [
             8,
             6
+          ],
+          [
+            7,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            8
+          ],
+          [
+            5,
+            8
           ]
         ]
       },
@@ -25527,31 +25527,31 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            9,
-            8
-          ],
-          [
             10,
-            8
-          ],
-          [
-            10,
-            7
-          ],
-          [
-            9,
-            7
+            6
           ],
           [
             9,
             6
           ],
           [
+            9,
+            7
+          ],
+          [
             10,
-            6
+            7
+          ],
+          [
+            10,
+            8
+          ],
+          [
+            9,
+            8
           ]
         ]
       },
@@ -26331,14 +26331,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
-            7
-          ],
-          [
-            5,
+            7,
             7
           ],
           [
@@ -26346,7 +26342,11 @@ export const LEVEL_PACK = [
             7
           ],
           [
-            7,
+            5,
+            7
+          ],
+          [
+            4,
             7
           ]
         ]
@@ -26733,31 +26733,31 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
-            11,
-            7
-          ],
-          [
-            11,
+            9,
             6
-          ],
-          [
-            10,
-            6
-          ],
-          [
-            10,
-            7
           ],
           [
             9,
             7
           ],
           [
-            9,
+            10,
+            7
+          ],
+          [
+            10,
             6
+          ],
+          [
+            11,
+            6
+          ],
+          [
+            11,
+            7
           ]
         ]
       },
@@ -27325,11 +27325,11 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             8,
-            7
+            5
           ],
           [
             8,
@@ -27337,7 +27337,7 @@ export const LEVEL_PACK = [
           ],
           [
             8,
-            5
+            7
           ]
         ]
       },
@@ -27380,15 +27380,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             9,
-            11
+            10
           ],
           [
             9,
-            10
+            11
           ]
         ]
       },
@@ -28000,15 +28000,15 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             9,
-            11
+            10
           ],
           [
             9,
-            10
+            11
           ]
         ]
       },
@@ -28051,15 +28051,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             6,
-            10
-          ],
-          [
-            6,
-            9
+            7
           ],
           [
             6,
@@ -28067,7 +28063,11 @@ export const LEVEL_PACK = [
           ],
           [
             6,
-            7
+            9
+          ],
+          [
+            6,
+            10
           ]
         ]
       },
@@ -28724,14 +28724,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            6,
+            7,
             7
           ],
           [
-            7,
+            6,
             7
           ]
         ]
@@ -28917,11 +28917,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             5,
-            9
+            7
           ],
           [
             5,
@@ -28929,7 +28929,7 @@ export const LEVEL_PACK = [
           ],
           [
             5,
-            7
+            9
           ]
         ]
       },
@@ -29095,20 +29095,20 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             6
           ],
           [
-            6,
+            5,
             6
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
@@ -29130,15 +29130,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             8,
-            7
+            8
           ],
           [
             8,
-            8
+            7
           ]
         ]
       },
@@ -29736,15 +29736,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            6
+            7
           ],
           [
             7,
-            7
+            6
           ]
         ]
       },
@@ -29801,7 +29801,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
@@ -29823,7 +29823,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             7,
@@ -31044,7 +31044,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             5,
@@ -31170,10 +31170,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            11,
+            9,
             5
           ],
           [
@@ -31181,7 +31181,7 @@ export const LEVEL_PACK = [
             5
           ],
           [
-            9,
+            11,
             5
           ]
         ]
@@ -31216,19 +31216,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             7,
-            10
-          ],
-          [
-            7,
-            9
-          ],
-          [
-            7,
-            8
+            6
           ],
           [
             7,
@@ -31236,7 +31228,15 @@ export const LEVEL_PACK = [
           ],
           [
             7,
-            6
+            8
+          ],
+          [
+            7,
+            9
+          ],
+          [
+            7,
+            10
           ]
         ]
       },
@@ -31292,14 +31292,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             4
           ],
           [
-            5,
+            4,
             4
           ]
         ]
@@ -33070,15 +33070,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            4
+            5
           ],
           [
             9,
-            5
+            4
           ]
         ]
       },
@@ -33492,15 +33492,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            4
+            5
           ],
           [
             6,
-            5
+            4
           ]
         ]
       },
@@ -33514,14 +33514,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             6
           ],
           [
-            6,
+            5,
             6
           ]
         ]
@@ -34117,15 +34117,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            5
+            6
           ],
           [
             6,
-            6
+            5
           ]
         ]
       },
@@ -34789,15 +34789,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            6
+            7
           ],
           [
             6,
-            7
+            6
           ]
         ]
       },
@@ -34842,15 +34842,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            8
+            9
           ],
           [
             9,
-            9
+            8
           ]
         ]
       },
@@ -35379,7 +35379,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             6,
@@ -35388,27 +35388,27 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
-            4
+            5
           ],
           [
             10,
-            5
+            4
           ]
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            7,
+            8,
             5
           ],
           [
-            8,
+            7,
             5
           ]
         ]
@@ -35528,14 +35528,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            9,
+            10,
             10
           ],
           [
-            10,
+            9,
             10
           ]
         ]
@@ -35555,15 +35555,15 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             5,
-            10
+            9
           ],
           [
             5,
-            9
+            10
           ]
         ]
       },
@@ -35690,11 +35690,19 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
+            9,
+            7
+          ],
+          [
+            9,
+            8
+          ],
+          [
             10,
-            10
+            8
           ],
           [
             10,
@@ -35702,15 +35710,7 @@ export const LEVEL_PACK = [
           ],
           [
             10,
-            8
-          ],
-          [
-            9,
-            8
-          ],
-          [
-            9,
-            7
+            10
           ]
         ]
       },
@@ -36015,14 +36015,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             5
           ],
           [
-            6,
+            5,
             5
           ]
         ]
@@ -36190,11 +36190,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             4,
-            6
+            8
           ],
           [
             4,
@@ -36202,7 +36202,7 @@ export const LEVEL_PACK = [
           ],
           [
             4,
-            8
+            6
           ]
         ]
       },
@@ -36345,23 +36345,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            11,
-            11
-          ],
-          [
-            11,
-            10
-          ],
-          [
-            10,
-            10
-          ],
           [
             10,
             9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            10
+          ],
+          [
+            11,
+            11
           ]
         ]
       },
@@ -37496,14 +37496,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            9,
+            8,
             5
           ],
           [
-            8,
+            9,
             5
           ]
         ]
@@ -37979,7 +37979,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
@@ -38677,15 +38677,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            5
+            6
           ],
           [
             6,
-            6
+            5
           ]
         ]
       },
@@ -38730,14 +38730,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             8
           ],
           [
-            6,
+            5,
             8
           ]
         ]
@@ -39890,15 +39890,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            5
+            6
           ],
           [
             9,
-            6
+            5
           ]
         ]
       },
@@ -39929,14 +39929,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            7,
+            8,
             6
           ],
           [
-            8,
+            7,
             6
           ]
         ]
@@ -40069,23 +40069,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            10,
-            10
-          ],
-          [
-            10,
-            9
-          ],
-          [
-            9,
-            9
-          ],
           [
             9,
             8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            9
+          ],
+          [
+            10,
+            10
           ]
         ]
       },
@@ -40803,18 +40803,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            6,
-            7
-          ],
-          [
-            7,
-            7
-          ],
-          [
-            7,
+            9,
             6
           ],
           [
@@ -40822,8 +40814,16 @@ export const LEVEL_PACK = [
             6
           ],
           [
-            9,
+            7,
             6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            6,
+            7
           ]
         ]
       },
@@ -42094,11 +42094,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             5,
-            11
+            9
           ],
           [
             5,
@@ -42106,7 +42106,7 @@ export const LEVEL_PACK = [
           ],
           [
             5,
-            9
+            11
           ]
         ]
       },
@@ -42562,15 +42562,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             8,
-            5
+            6
           ],
           [
             8,
-            6
+            5
           ]
         ]
       },
@@ -43216,7 +43216,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
@@ -43225,15 +43225,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            8
+            9
           ],
           [
             7,
-            9
+            8
           ]
         ]
       },
@@ -43820,20 +43820,20 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            6
+            7
           ],
           [
             7,
-            7
+            6
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
@@ -43881,14 +43881,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            6,
+            7,
             8
           ],
           [
-            7,
+            6,
             8
           ]
         ]
@@ -43964,15 +43964,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             10,
-            7
+            6
           ],
           [
             10,
-            6
+            7
           ]
         ]
       },
@@ -45318,15 +45318,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             7,
-            8
+            7
           ],
           [
             7,
-            7
+            8
           ]
         ]
       },
@@ -45456,11 +45456,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             10,
-            9
+            7
           ],
           [
             10,
@@ -45468,7 +45468,7 @@ export const LEVEL_PACK = [
           ],
           [
             10,
-            7
+            9
           ]
         ]
       },
@@ -45687,7 +45687,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             11,
@@ -45696,14 +45696,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             5
           ],
           [
-            6,
+            5,
             5
           ]
         ]
@@ -45753,28 +45753,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             4,
-            7
+            8
           ],
           [
             4,
-            8
+            7
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            7
+            8
           ],
           [
             5,
-            8
+            7
           ]
         ]
       },
@@ -45801,14 +45801,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             9
           ],
           [
-            5,
+            4,
             9
           ]
         ]
@@ -45868,10 +45868,10 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            6,
+            8,
             9
           ],
           [
@@ -45879,7 +45879,7 @@ export const LEVEL_PACK = [
             9
           ],
           [
-            8,
+            6,
             9
           ]
         ]
@@ -45935,36 +45935,36 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             5,
-            5
+            6
           ],
           [
             5,
-            6
+            5
           ]
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
-          [
-            4,
-            8
-          ],
-          [
-            5,
-            8
-          ],
-          [
-            5,
-            7
-          ],
           [
             6,
             7
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            5,
+            8
+          ],
+          [
+            4,
+            8
           ]
         ]
       },
@@ -45990,15 +45990,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             9,
-            11
-          ],
-          [
-            9,
-            10
+            8
           ],
           [
             9,
@@ -46006,7 +46002,11 @@ export const LEVEL_PACK = [
           ],
           [
             9,
-            8
+            10
+          ],
+          [
+            9,
+            11
           ]
         ]
       },
@@ -46338,15 +46338,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            4
+            5
           ],
           [
             7,
-            5
+            4
           ]
         ]
       },
@@ -46364,28 +46364,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            5
+            6
           ],
           [
             6,
-            6
+            5
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             8,
-            5
+            6
           ],
           [
             8,
-            6
+            5
           ]
         ]
       },
@@ -46412,15 +46412,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            6
+            7
           ],
           [
             7,
-            7
+            6
           ]
         ]
       },
@@ -46491,14 +46491,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            6,
+            7,
             10
           ],
           [
-            7,
+            6,
             10
           ]
         ]
@@ -47093,28 +47093,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             5
           ],
           [
-            6,
+            5,
             5
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             7,
-            5
+            6
           ],
           [
             7,
-            6
+            5
           ]
         ]
       },
@@ -47137,7 +47137,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             7,
@@ -47146,15 +47146,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            7
+            8
           ],
           [
             9,
-            8
+            7
           ]
         ]
       },
@@ -48000,14 +48000,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            8,
+            9,
             9
           ],
           [
-            9,
+            8,
             9
           ]
         ]
@@ -48161,23 +48161,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
-          [
-            6,
-            6
-          ],
-          [
-            7,
-            6
-          ],
-          [
-            7,
-            7
-          ],
           [
             8,
             7
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            7,
+            6
+          ],
+          [
+            6,
+            6
           ]
         ]
       },
@@ -48341,15 +48341,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            4
+            5
           ],
           [
             9,
-            5
+            4
           ]
         ]
       },
@@ -48494,11 +48494,27 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             8,
-            10
+            6
+          ],
+          [
+            8,
+            7
+          ],
+          [
+            9,
+            7
+          ],
+          [
+            9,
+            8
+          ],
+          [
+            8,
+            8
           ],
           [
             8,
@@ -48506,23 +48522,7 @@ export const LEVEL_PACK = [
           ],
           [
             8,
-            8
-          ],
-          [
-            9,
-            8
-          ],
-          [
-            9,
-            7
-          ],
-          [
-            8,
-            7
-          ],
-          [
-            8,
-            6
+            10
           ]
         ]
       },
@@ -48829,23 +48829,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
-          [
-            6,
-            5
-          ],
-          [
-            6,
-            6
-          ],
-          [
-            7,
-            6
-          ],
           [
             7,
             7
+          ],
+          [
+            7,
+            6
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            5
           ]
         ]
       },
@@ -49015,15 +49015,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
-            4
+            5
           ],
           [
             10,
-            5
+            4
           ]
         ]
       },
@@ -49121,23 +49121,23 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            7,
-            11
-          ],
-          [
-            7,
-            10
-          ],
-          [
-            6,
-            10
-          ],
           [
             6,
             9
+          ],
+          [
+            6,
+            10
+          ],
+          [
+            7,
+            10
+          ],
+          [
+            7,
+            11
           ]
         ]
       },
@@ -49703,28 +49703,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            5,
+            6,
             7
           ],
           [
-            6,
+            5,
             7
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            7
+            8
           ],
           [
             9,
-            8
+            7
           ]
         ]
       },
@@ -49764,7 +49764,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "N",
         "path": [
           [
             7,
@@ -49800,23 +49800,23 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
-          [
-            10,
-            11
-          ],
-          [
-            10,
-            10
-          ],
-          [
-            11,
-            10
-          ],
           [
             11,
             9
+          ],
+          [
+            11,
+            10
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            10,
+            11
           ]
         ]
       },
@@ -50895,28 +50895,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             7
           ],
           [
-            5,
+            4,
             7
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            7
+            8
           ],
           [
             6,
-            8
+            7
           ]
         ]
       },
@@ -50939,15 +50939,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
-            9
+            10
           ],
           [
             6,
-            10
+            9
           ]
         ]
       },
@@ -51063,23 +51063,11 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
-            4,
-            11
-          ],
-          [
-            4,
-            10
-          ],
-          [
-            4,
-            9
-          ],
-          [
             5,
-            9
+            7
           ],
           [
             5,
@@ -51087,7 +51075,19 @@ export const LEVEL_PACK = [
           ],
           [
             5,
-            7
+            9
+          ],
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            4,
+            11
           ]
         ]
       },
@@ -52032,15 +52032,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
-            4
+            5
           ],
           [
             10,
-            5
+            4
           ]
         ]
       },
@@ -52085,15 +52085,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
-            6
+            7
           ],
           [
             10,
-            7
+            6
           ]
         ]
       },
@@ -52209,15 +52209,15 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             7,
-            9
+            8
           ],
           [
             7,
-            8
+            9
           ]
         ]
       },
@@ -52678,7 +52678,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             6,
@@ -52696,28 +52696,28 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            4,
+            5,
             7
           ],
           [
-            5,
+            4,
             7
           ]
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            7
+            8
           ],
           [
             9,
-            8
+            7
           ]
         ]
       },
@@ -53398,14 +53398,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            11,
+            10,
             6
           ],
           [
-            10,
+            11,
             6
           ]
         ]
@@ -54554,14 +54554,14 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
           [
-            7,
+            8,
             7
           ],
           [
-            8,
+            7,
             7
           ]
         ]
@@ -54580,7 +54580,7 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             10,
@@ -55310,15 +55310,15 @@ export const LEVEL_PACK = [
     "size": 16,
     "arrows": [
       {
-        "dir": "N",
+        "dir": "S",
         "path": [
           [
             6,
-            7
+            6
           ],
           [
             6,
-            6
+            7
           ]
         ]
       },
@@ -55917,36 +55917,36 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "S",
+        "dir": "N",
         "path": [
           [
             9,
-            4
+            5
           ],
           [
             9,
-            5
+            4
           ]
         ]
       },
       {
-        "dir": "E",
+        "dir": "W",
         "path": [
-          [
-            7,
-            9
-          ],
-          [
-            8,
-            9
-          ],
-          [
-            8,
-            10
-          ],
           [
             9,
             10
+          ],
+          [
+            8,
+            10
+          ],
+          [
+            8,
+            9
+          ],
+          [
+            7,
+            9
           ]
         ]
       },
@@ -56081,10 +56081,10 @@ export const LEVEL_PACK = [
         ]
       },
       {
-        "dir": "W",
+        "dir": "E",
         "path": [
           [
-            11,
+            9,
             8
           ],
           [
@@ -56092,7 +56092,7 @@ export const LEVEL_PACK = [
             8
           ],
           [
-            9,
+            11,
             8
           ]
         ]
