@@ -478,8 +478,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  min-height: 48px;
+  gap: 0.12rem;
+  min-height: 52px;
   padding: 0.35rem 0.2rem 0.3rem;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -520,14 +520,21 @@ body {
 
 .level-pips {
   display: flex;
-  gap: 0.15rem;
+  justify-content: center;
+  gap: 0.06rem;
+  line-height: 1;
 }
 
 .level-pip {
-  width: 0.38rem;
-  height: 0.38rem;
-  background: rgba(244, 244, 240, 0.16);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1;
+  color: rgba(244, 244, 240, 0.32);
+}
+
+.level-pip.filled {
+  color: var(--accent);
 }
 
 .overlay-card-levels .menu-actions {
@@ -672,7 +679,7 @@ function buildUI() {
       <div class="overlay-card overlay-card-levels" id="levelsDialog" role="dialog" aria-modal="true" aria-labelledby="levelsTitle">
         <p class="overlay-kicker">Select</p>
         <h2 class="overlay-title" id="levelsTitle">All levels</h2>
-        <p class="level-legend">Unlocked levels you have not cleared yet are outlined. Skipped levels have a dashed border — finish one to get a skip back. Locked levels wait until you finish or skip the one before.</p>
+        <p class="level-legend">Filled stars are your best clear. Unlocked levels you have not cleared yet are outlined. Skipped levels have a dashed border — finish one to get a skip back. Locked levels wait until you finish or skip the one before.</p>
         <div class="level-grid" id="levelGrid"></div>
         <div class="menu-actions">
           <button type="button" class="btn" id="btnCloseLevels">Close</button>
@@ -871,8 +878,8 @@ function showWinSplash(stars) {
   endStars.hidden = false;
   btnEndSkip.hidden = true;
   endCopy.textContent = last
-    ? `That's the last level. Up next: Level ${nextNumber}.`
-    : `Up next: Level ${nextNumber}.`;
+    ? "That's the last one in the pack."
+    : "Every arrow found its way out.";
   btnEndPrimary.textContent = `Next — Level ${nextNumber}`;
   endOverlay.hidden = false;
 }
@@ -881,10 +888,9 @@ function showFailSplash() {
   state.endMode = "fail";
   endCard.classList.add("is-fail");
   endKicker.textContent = "Failed";
-  endTitle.textContent = "Level failed";
+  endTitle.textContent = "Out of chances";
   endStars.hidden = true;
-  endCopy.textContent =
-    "You failed to complete the level. Three arrows could not move — reset to try again.";
+  endCopy.textContent = "Three arrows could not move.";
   btnEndPrimary.textContent = "Reset";
   refreshSkipButtons();
   endOverlay.hidden = false;
@@ -1324,6 +1330,7 @@ function openLevels() {
     for (let s = 1; s <= 3; s++) {
       const pip = document.createElement("span");
       pip.className = s <= item.stars ? "level-pip filled" : "level-pip";
+      pip.textContent = s <= item.stars ? "★" : "☆";
       pips.appendChild(pip);
     }
     btn.append(num, pips);
