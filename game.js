@@ -5,13 +5,7 @@ import {
   snakeExitDistance,
 } from "./js/logic.js";
 import { getLevelData } from "./js/levels.js";
-import {
-  STORAGE_KEY,
-  parseLevelIndex,
-  serializeLevelIndex,
-  snapshotArrows,
-  parseArrowSnapshot,
-} from "./js/progress.js";
+import { STORAGE_KEY, parseLevelIndex, serializeLevelIndex } from "./js/progress.js";
 
 const STYLE = `:root {
   --bg-0: #050505;
@@ -24,7 +18,7 @@ const STYLE = `:root {
   --ok: #5dffb0;
   --font-display: "Archivo Black", Impact, sans-serif;
   --font-body: "DM Sans", system-ui, sans-serif;
-  --board-max: min(78vmin, 720px);
+  --board-max: min(92vmin, min(calc(100vw - 2rem), calc(100dvh - 5.5rem - var(--safe-top) - var(--safe-bottom))));
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -50,7 +44,7 @@ body {
   font-family: var(--font-body);
   background: var(--bg-0);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   overflow-x: hidden;
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
@@ -83,7 +77,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: calc(1.1rem + var(--safe-top)) clamp(1rem, 3vw, 2rem) 0.4rem;
+  padding: calc(0.75rem + var(--safe-top)) clamp(0.85rem, 3vw, 1.5rem) 0.35rem;
   animation: fade-down 0.7s ease both;
 }
 
@@ -110,30 +104,37 @@ body {
   font-weight: 400;
 }
 
-.stats {
-  display: flex;
-  gap: clamp(0.75rem, 2.5vw, 1.5rem);
+.icon-btn {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
 }
 
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 2.5rem;
+.icon-btn:hover {
+  border-color: rgba(244, 244, 240, 0.35);
+  background: rgba(244, 244, 240, 0.04);
 }
 
-.stat-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
+.icon-btn:active {
+  transform: translateY(1px);
 }
 
-.stat-value {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
+.icon-btn svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
 }
 
 .stage {
@@ -141,18 +142,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.85rem;
-  padding: 0.5rem 1rem 1rem;
-}
-
-.hint {
-  margin: 0;
-  max-width: 28rem;
-  text-align: center;
-  color: var(--muted);
-  font-size: clamp(0.85rem, 2.2vw, 0.98rem);
-  line-height: 1.45;
-  animation: fade-up 0.8s 0.1s ease both;
+  padding: 0.25rem clamp(0.75rem, 3vw, 1.25rem) calc(0.75rem + var(--safe-bottom));
 }
 
 .board-wrap {
@@ -181,14 +171,6 @@ body {
   z-index: -1;
   background: radial-gradient(circle at 50% 50%, rgba(232, 255, 71, 0.07), transparent 62%);
   pointer-events: none;
-}
-
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 0.65rem;
-  padding: 0.5rem 1rem calc(1.4rem + var(--safe-bottom));
-  animation: fade-up 0.8s 0.2s ease both;
 }
 
 .btn {
@@ -350,32 +332,6 @@ body {
   }
 }
 
-@media (max-width: 560px) {
-  .top-bar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .stats {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .stat {
-    align-items: flex-start;
-  }
-
-  .controls {
-    width: 100%;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  .btn {
-    flex: 1;
-    min-width: 0;
-  }
-}
 `;
 
 function injectStyles() {
@@ -398,35 +354,21 @@ function buildUI() {
         <span class="brand-mark" aria-hidden="true"></span>
         <h1 class="brand-name">ARROW OUT</h1>
       </div>
-      <div class="stats" aria-live="polite">
-        <div class="stat">
-          <span class="stat-label">Level</span>
-          <span class="stat-value" id="levelNum">1</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Left</span>
-          <span class="stat-value" id="arrowsLeft">0</span>
-        </div>
-        <div class="stat">
-          <span class="stat-label">Moves</span>
-          <span class="stat-value" id="moveCount">0</span>
-        </div>
-      </div>
+      <button type="button" class="icon-btn" id="btnReset" title="Reset level" aria-label="Reset level">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+          <path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+          <path d="M3 21v-5h5" />
+        </svg>
+      </button>
     </header>
     <main class="stage">
-      <p class="hint" id="hint">
-        Tap an arrow to send it out — the body follows the tip like a snake.
-      </p>
       <div class="board-wrap">
         <canvas id="board" width="720" height="720" role="img" aria-label="Arrow puzzle board"></canvas>
         <div class="board-glow" aria-hidden="true"></div>
       </div>
     </main>
-    <footer class="controls">
-      <button type="button" class="btn btn-ghost" id="btnUndo" title="Undo">Undo</button>
-      <button type="button" class="btn btn-primary" id="btnReset" title="Reset level">Reset</button>
-      <button type="button" class="btn btn-ghost" id="btnSkip" title="Next level">Skip</button>
-    </footer>
     <div class="overlay" id="winOverlay" hidden>
       <div class="overlay-card">
         <p class="overlay-kicker">Cleared</p>
@@ -457,16 +399,10 @@ buildUI();
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
-const elLevel = document.getElementById("levelNum");
-const elLeft = document.getElementById("arrowsLeft");
-const elMoves = document.getElementById("moveCount");
-const elHint = document.getElementById("hint");
 const winOverlay = document.getElementById("winOverlay");
 const winTitle = document.getElementById("winTitle");
 const winCopy = document.getElementById("winCopy");
-const btnUndo = document.getElementById("btnUndo");
 const btnReset = document.getElementById("btnReset");
-const btnSkip = document.getElementById("btnSkip");
 const btnNext = document.getElementById("btnNext");
 
 const state = {
@@ -474,7 +410,6 @@ const state = {
   size: 8,
   arrows: /** @type {Arrow[]} */ ([]),
   moves: 0,
-  history: /** @type {string[]} */ ([]),
   cell: 40,
   pad: 24,
   dpr: 1,
@@ -515,13 +450,10 @@ function hydrateLevel(level) {
     hovered: false,
   }));
   state.moves = 0;
-  state.history = [];
   state.animating = false;
   state.won = false;
   winOverlay.hidden = true;
   resize();
-  updateHud();
-  updateHint();
 }
 
 function startLevel(index) {
@@ -534,25 +466,6 @@ function canEscape(arrow) {
   return canEscapeArrow(arrow, state.size, state.arrows);
 }
 
-function updateHud() {
-  elLevel.textContent = String(state.levelIndex + 1);
-  elLeft.textContent = String(state.arrows.filter((a) => a.state !== "gone").length);
-  elMoves.textContent = String(state.moves);
-  btnUndo.disabled = state.history.length === 0 || state.animating;
-}
-
-function updateHint() {
-  const remaining = state.arrows.filter((a) => a.state === "idle").length;
-  if (remaining === 0) {
-    elHint.textContent = "Board clear — nice work.";
-    return;
-  }
-  const stuck = !state.arrows.some((a) => a.state === "idle" && canEscape(a));
-  elHint.textContent = stuck
-    ? "Stuck? Undo or reset and try another order."
-    : "Tap an arrow to send it out — the body follows the tip like a snake.";
-}
-
 function resize() {
   const rect = canvas.getBoundingClientRect();
   state.dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -562,35 +475,6 @@ function resize() {
   const side = Math.min(rect.width, rect.height);
   state.pad = Math.max(14, side * 0.04);
   state.cell = (side - state.pad * 2) / state.size;
-}
-
-function pushHistory() {
-  state.history.push(snapshotArrows(state.arrows));
-  if (state.history.length > 80) state.history.shift();
-}
-
-function undo() {
-  if (!state.history.length || state.animating) return;
-  const raw = state.history.pop();
-  if (!raw) return;
-  const restored = parseArrowSnapshot(raw);
-  state.arrows = restored.map((a) => ({
-    id: a.id,
-    dir: a.dir,
-    path: a.path.map((p) => ({ x: p.x, y: p.y })),
-    offsetX: 0,
-    offsetY: 0,
-    slideDistance: 0,
-    state: "idle",
-    animT: 0,
-    shakePhase: 0,
-    hovered: false,
-  }));
-  state.moves = Math.max(0, state.moves - 1);
-  state.won = false;
-  winOverlay.hidden = true;
-  updateHud();
-  updateHint();
 }
 
 function clientToBoard(clientX, clientY) {
@@ -664,7 +548,6 @@ function tryMove(arrow) {
     return;
   }
 
-  pushHistory();
   state.moves += 1;
   arrow.state = "sliding";
   syncAnimating();
@@ -672,7 +555,6 @@ function tryMove(arrow) {
   arrow.offsetX = 0;
   arrow.offsetY = 0;
   arrow.slideDistance = 0;
-  updateHud();
 }
 
 function updateArrow(arrow, dt) {
@@ -710,8 +592,6 @@ function updateArrow(arrow, dt) {
       arrow.offsetX = 0;
       arrow.offsetY = 0;
       syncAnimating();
-      updateHud();
-      updateHint();
       checkWin();
     }
   }
@@ -721,11 +601,8 @@ function checkWin() {
   if (state.won) return;
   if (state.arrows.every((a) => a.state === "gone")) {
     state.won = true;
-    winTitle.textContent = `Level ${state.levelIndex + 1}`;
-    winCopy.textContent =
-      state.moves === 1
-        ? "One clean shot. Ready for the next maze?"
-        : `Cleared in ${state.moves} moves. Keep the exits open.`;
+    winTitle.textContent = "Level complete";
+    winCopy.textContent = "Every arrow found its way out.";
     winOverlay.hidden = false;
   }
 }
@@ -882,16 +759,11 @@ canvas.addEventListener("pointercancel", (e) => {
   if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
 });
 
-btnUndo.addEventListener("click", () => undo());
 btnReset.addEventListener("click", () => startLevel(state.levelIndex));
-btnSkip.addEventListener("click", () => startLevel(state.levelIndex + 1));
 btnNext.addEventListener("click", () => startLevel(state.levelIndex + 1));
 
 window.addEventListener("keydown", (e) => {
-  if (e.key === "z" && (e.metaKey || e.ctrlKey)) {
-    e.preventDefault();
-    undo();
-  } else if (e.key === "r" || e.key === "R") {
+  if (e.key === "r" || e.key === "R") {
     startLevel(state.levelIndex);
   } else if (e.key === "n" || e.key === "N") {
     if (!winOverlay.hidden) startLevel(state.levelIndex + 1);
