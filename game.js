@@ -635,7 +635,7 @@ function buildUI() {
             <path d="M4 17h16" />
           </svg>
         </button>
-        <button type="button" class="icon-btn" id="btnReset" title="Reset level" aria-label="Reset level">
+        <button type="button" class="icon-btn" id="btnReset" title="Restart level" aria-label="Restart level">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
             <path d="M21 3v5h-5" />
@@ -728,7 +728,7 @@ function buildUI() {
         </div>
         <div id="menuConfirm" hidden>
           <p class="overlay-kicker">Start over</p>
-          <h2 class="overlay-title">Reset everything?</h2>
+          <h2 class="overlay-title">Clear everything?</h2>
           <p class="overlay-copy">Clears saved progress and returns you to Level 1. This cannot be undone.</p>
           <div class="menu-actions">
             <button type="button" class="btn" id="btnCancelClear">Cancel</button>
@@ -898,7 +898,7 @@ function showFailSplash() {
   endStars.hidden = true;
   btnEndRetry.hidden = true;
   endCopy.textContent = "Three arrows could not move.";
-  btnEndPrimary.textContent = "Reset";
+  btnEndPrimary.textContent = "Restart";
   refreshSkipButtons();
   endOverlay.hidden = false;
 }
