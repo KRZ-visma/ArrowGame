@@ -107,7 +107,29 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
     placed.push({ dir, path });
   }
 
+  fillEmptyCells(size, occupied, placed, rng);
+
   return { size, arrows: placed };
+}
+
+/**
+ * Fill all empty cells with single-cell arrows (random directions).
+ * @param {number} size
+ * @param {Set<string>} occupied
+ * @param {Array} placed
+ * @param {() => number} rng
+ */
+function fillEmptyCells(size, occupied, placed, rng) {
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const key = cellKey(x, y);
+      if (!occupied.has(key)) {
+        const dir = DIRS[Math.floor(rng() * 4)];
+        occupied.add(key);
+        placed.push({ dir, path: [[x, y]] });
+      }
+    }
+  }
 }
 
 /** Mulberry32 — deterministic levels from an index */
@@ -136,15 +158,31 @@ export function makeHandLevel(seed, size, count) {
 }
 
 /** Level 1 — tiny tutorial with an obvious free arrow and a blocked one */
-export const TUTORIAL = {
-  size: 6,
-  arrows: [
-    { dir: "E", path: [[1, 1], [2, 1], [3, 1]] },
-    { dir: "S", path: [[4, 1], [4, 2], [4, 3]] },
-    { dir: "W", path: [[3, 4], [2, 4], [1, 4]] },
-    { dir: "N", path: [[1, 3], [1, 2]] },
-  ],
-};
+function buildTutorial() {
+  const base = {
+    size: 6,
+    arrows: [
+      { dir: "E", path: [[1, 1], [2, 1], [3, 1]] },
+      { dir: "S", path: [[4, 1], [4, 2], [4, 3]] },
+      { dir: "W", path: [[3, 4], [2, 4], [1, 4]] },
+      { dir: "N", path: [[1, 3], [1, 2]] },
+    ],
+  };
+  
+  const occupied = new Set();
+  for (const arrow of base.arrows) {
+    for (const [x, y] of arrow.path) {
+      occupied.add(cellKey(x, y));
+    }
+  }
+  
+  const rng = rngFrom(1);
+  fillEmptyCells(base.size, occupied, base.arrows, rng);
+  
+  return base;
+}
+
+export const TUTORIAL = buildTutorial();
 
 /** Seed/size/count for the first curated pack (levels 2–12). */
 export const HAND_LEVEL_SPECS = [

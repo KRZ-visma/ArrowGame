@@ -28,7 +28,8 @@ describe("TUTORIAL", () => {
     });
 
     assert.equal(TUTORIAL.size, 6);
-    assert.equal(TUTORIAL.arrows.length, 4);
+    const expectedCells = TUTORIAL.size * TUTORIAL.size;
+    assert.equal(occupied.size, expectedCells, `expected all ${expectedCells} cells filled`);
     assert.ok(results.some(Boolean), "expected at least one free arrow");
     assert.ok(results.some((free) => !free), "expected at least one blocked arrow");
   });
@@ -53,9 +54,11 @@ describe("level generation", () => {
     }
   });
 
-  it("starts each arrow tail in the center zone", () => {
+  it("starts each multi-cell arrow tail in the center zone", () => {
     const level = buildSolvableLevel(10, 12, rngFrom(77));
-    for (const arrow of level.arrows) {
+    const multiCellArrows = level.arrows.filter((arrow) => arrow.path.length > 1);
+    assert.ok(multiCellArrows.length > 0, "expected at least one multi-cell arrow");
+    for (const arrow of multiCellArrows) {
       const [x, y] = arrow.path[0];
       assert.ok(
         isCenterCell(x, y, level.size),
@@ -78,5 +81,21 @@ describe("level generation", () => {
     for (const index of [0, 1, 11, 12, 50, 99]) {
       assert.deepEqual(LEVEL_PACK[index], buildLevelForIndex(index));
     }
+  });
+
+  it("fills all cells with arrows (no gaps)", () => {
+    const level = buildSolvableLevel(8, 10, rngFrom(42));
+    const occupied = new Set();
+    for (const arrow of level.arrows) {
+      for (const [x, y] of arrow.path) {
+        occupied.add(cellKey(x, y));
+      }
+    }
+    const totalCells = level.size * level.size;
+    assert.equal(
+      occupied.size,
+      totalCells,
+      `expected all ${totalCells} cells to be filled, got ${occupied.size}`,
+    );
   });
 });
