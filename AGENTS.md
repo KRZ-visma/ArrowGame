@@ -20,7 +20,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
 | Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD, pointer/keyboard |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy — **unit tests** |
-| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `npm run generate-levels` — **unit tests** |
+| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; generator places arrow tails in the center zone (`buildSolvableLevel`) — **unit tests** |
 | Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
