@@ -19,7 +19,7 @@
 ## Generator invariants
 
 - Pack order follows generation index (tutorial first) — do not sort by `levelComplexity`
-- `levelComplexity` is clearance-led (`blocked0`, `waves`, `depthSum`; no board `size`) for analysis only
+- `levelComplexity` is clearance-led (`blocked0`, `waves`, `depthSum`) then direction spread (unique exit dirs + arrows off the dominant dir; uniform flocks score lower than mixed dirs); no board `size`. Analysis only — not used to reorder
 - `levelParamsForIndex` must not drop size or snake-count after the hand specs; continue from the last hand spec
 - Puzzle-arrow `minBends` ramps with pack index (`minBendsForLevelIndex`: 0 until 20, then +1 each 10 levels); growth hugs occupied cells and softens the floor only when nothing fits
 - `buildSolvableLevel` places winding multi-cell puzzle arrows via `growWindingPath` (bends, U-turns, multi-turn curls/coils; `minBends` floor; last segment matches exit dir; tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer a 3-cell L — always when `minBends` ≥ 1 — then length 2, allow length 1; edges may stay empty)
