@@ -31,27 +31,88 @@ export function isCenterCell(x, y, size) {
 }
 
 /**
- * Target polyline length for a puzzle arrow (includes the tail cell).
- * @param {number} size
- * @param {() => number} rng
+ * Minimum 90° bends for puzzle arrows at a pack index.
+ * Levels 0–19: 0; 20–29: 1; 30–39: 2; then +1 every 10 levels.
+ * @param {number} levelIndex
  */
-function pathBudget(size, rng) {
-  const span = Math.min(8, Math.max(3, Math.floor(size / 2)));
-  return 3 + Math.floor(rng() * span);
+export function minBendsForLevelIndex(levelIndex) {
+  const i = Math.max(0, Math.floor(levelIndex));
+  return Math.max(0, Math.floor(i / 10) - 1);
 }
 
 /**
- * Pick a body shape. Straight is the fallback; most arrows bend, U-turn, or curl.
+ * Target polyline length for a puzzle arrow (includes the tail cell).
+ * Higher bend floors need longer snakes so curls can fit.
+ * @param {number} size
+ * @param {() => number} rng
+ * @param {number} [minBends]
+ */
+function pathBudget(size, rng, minBends = 0) {
+  const span = Math.min(8, Math.max(3, Math.floor(size / 2)));
+  const base = 3 + Math.floor(rng() * span);
+  const floor = minBends <= 0 ? 2 : 1 + minBends * 2;
+  return Math.max(base, floor + 1);
+}
+
+/**
+ * Pick a body shape. Higher `minBends` biases toward curls / U-turns and
+ * skips straight until the floor is zero.
  * @param {() => number} rng
  * @param {number} budget
+ * @param {number} [minBends]
  * @returns {"curl" | "uturn" | "bent" | "straight"}
  */
-export function chooseArrowShape(rng, budget) {
+export function chooseArrowShape(rng, budget, minBends = 0) {
   const roll = rng();
+  if (minBends >= 2) {
+    if (budget >= 6 && roll < 0.55) return "curl";
+    if (budget >= 4) return "uturn";
+    if (budget >= 3) return "bent";
+    return "straight";
+  }
+  if (minBends >= 1) {
+    if (budget >= 6 && roll < 0.4) return "curl";
+    if (budget >= 4 && roll < 0.72) return "uturn";
+    if (budget >= 3) return "bent";
+    return "straight";
+  }
   if (budget >= 6 && roll < 0.22) return "curl";
   if (budget >= 4 && roll < 0.5) return "uturn";
   if (budget >= 3 && roll < 0.88) return "bent";
   return "straight";
+}
+
+/**
+ * Which perpendicular side has more nearby occupied cells (for hugging).
+ * @param {number[]} start
+ * @param {import("./logic.js").Dir} exitDir
+ * @param {Set<string>} occupied
+ * @param {number} size
+ * @param {() => number} rng
+ * @returns {0 | 1}
+ */
+function hugTurnSide(start, exitDir, occupied, size, rng) {
+  /** @param {0 | 1} side */
+  const scoreSide = (side) => {
+    const turn = TURNS[exitDir][side];
+    const [tdx, tdy] = DELTA_ARR[turn];
+    const [edx, edy] = DELTA_ARR[exitDir];
+    let score = 0;
+    for (let a = 1; a <= 3; a += 1) {
+      for (let b = 0; b <= 2; b += 1) {
+        const x = start[0] + tdx * a + edx * b;
+        const y = start[1] + tdy * a + edy * b;
+        if (x < 0 || y < 0 || x >= size || y >= size) continue;
+        if (occupied.has(cellKey(x, y))) score += 1;
+      }
+    }
+    return score;
+  };
+  const s0 = scoreSide(0);
+  const s1 = scoreSide(1);
+  if (s0 > s1) return 0;
+  if (s1 > s0) return 1;
+  return rng() < 0.5 ? 0 : 1;
 }
 
 /**
@@ -117,7 +178,7 @@ function realizeStraight(start, exitDir, size, occupied, budget) {
  * @param {number} budget
  */
 function realizeBent(start, exitDir, size, occupied, rng, budget) {
-  const side = rng() < 0.5 ? 0 : 1;
+  const side = hugTurnSide(start, exitDir, occupied, size, rng);
   const turn = TURNS[exitDir][side];
   const other = TURNS[exitDir][1 - side];
   /** @type {Array<Array<{ dir: import("./logic.js").Dir, steps: number }>>} */
@@ -179,7 +240,8 @@ function realizeUTurn(start, exitDir, size, occupied, rng, budget) {
   const arm = 1 + Math.floor(rng() * Math.min(3, maxArm));
   const extraGap = budget - 2 * arm >= 2;
   const gap = 1 + Math.floor(rng() * (extraGap ? 2 : 1));
-  const sides = rng() < 0.5 ? [0, 1] : [1, 0];
+  const hug = hugTurnSide(start, exitDir, occupied, size, rng);
+  const sides = hug === 0 ? [0, 1] : [1, 0];
   for (const side of sides) {
     const turn = TURNS[exitDir][side];
     for (const a of [arm, 1]) {
@@ -202,28 +264,48 @@ function realizeUTurn(start, exitDir, size, occupied, rng, budget) {
 }
 
 /**
- * Two or more turns: S-curve, staircase, or hook.
+ * Two or more turns: S-curve, staircase, hook, or coil that hugs occupied cells.
  * @param {number[]} start
  * @param {import("./logic.js").Dir} exitDir
  * @param {number} size
  * @param {Set<string>} occupied
  * @param {() => number} rng
  * @param {number} budget
+ * @param {number} [minTurns]
  */
-function realizeCurl(start, exitDir, size, occupied, rng, budget) {
-  const side = rng() < 0.5 ? 0 : 1;
+function realizeCurl(start, exitDir, size, occupied, rng, budget, minTurns = 2) {
+  const side = hugTurnSide(start, exitDir, occupied, size, rng);
   const turn = TURNS[exitDir][side];
   const other = TURNS[exitDir][1 - side];
   const opp = OPPOSITE[exitDir];
   const a = 1 + Math.floor(rng() * 2);
   const b = 1 + Math.floor(rng() * 2);
+  const c = 1 + Math.floor(rng() * 2);
   const d = Math.max(1, budget - 1 - a - b - 1);
+  const coilRest = Math.max(1, budget - 1 - a - b - c - 1);
   const z1 = 1 + Math.floor(rng() * 2);
   const z2 = 1 + Math.floor(rng() * 2);
   const z3 = Math.max(1, budget - 1 - z1 - 1 - z2 - 1);
   const hookBack = 1 + Math.floor(rng() * 2);
   const hookSide = 1 + Math.floor(rng() * 2);
+  const wrapOut = Math.max(1, budget - 1 - a - 1 - b - 1);
   const recipes = [
+    // Same-side coil: wrap around a neighbor then exit
+    [
+      { dir: turn, steps: a },
+      { dir: exitDir, steps: b },
+      { dir: turn, steps: c },
+      { dir: exitDir, steps: coilRest },
+    ],
+    // Hug then reverse-jog out (C-shape around occupied)
+    [
+      { dir: turn, steps: a },
+      { dir: exitDir, steps: Math.max(2, b) },
+      { dir: other, steps: 1 },
+      { dir: opp, steps: 1 },
+      { dir: other, steps: 1 },
+      { dir: exitDir, steps: Math.max(1, wrapOut - 2) },
+    ],
     [
       { dir: turn, steps: a },
       { dir: exitDir, steps: b },
@@ -258,6 +340,11 @@ function realizeCurl(start, exitDir, size, occupied, rng, budget) {
       { dir: exitDir, steps: z3 },
     ],
   ];
+  const need = Math.max(2, minTurns);
+  for (const legs of recipes) {
+    const path = walkLegs(start, legs, size, occupied);
+    if (path && countPathTurns(path) >= need) return path;
+  }
   for (const legs of recipes) {
     const path = walkLegs(start, legs, size, occupied);
     if (path && countPathTurns(path) >= 2) return path;
@@ -270,6 +357,7 @@ const SHAPE_FALLBACK = /** @type {const} */ (["curl", "uturn", "bent", "straight
 /**
  * Grow a tail→head polyline that ends traveling in `exitDir`.
  * Prefers curled / angled bodies; U-turns walk opposite, jog, then out.
+ * When `minBends` > 0, skips straights until softer fallbacks are exhausted.
  *
  * @param {number[]} start
  * @param {import("./logic.js").Dir} exitDir
@@ -277,23 +365,43 @@ const SHAPE_FALLBACK = /** @type {const} */ (["curl", "uturn", "bent", "straight
  * @param {Set<string>} occupied
  * @param {() => number} rng
  * @param {"curl" | "uturn" | "bent" | "straight"} [shape]
+ * @param {number} [minBends]
  * @returns {number[][] | null}
  */
-export function growWindingPath(start, exitDir, size, occupied, rng, shape) {
-  const budget = pathBudget(size, rng);
-  const preferred = shape || chooseArrowShape(rng, budget);
+export function growWindingPath(start, exitDir, size, occupied, rng, shape, minBends = 0) {
+  let floor = Math.max(0, minBends | 0);
+  const budget = pathBudget(size, rng, floor);
+  const preferred = shape || chooseArrowShape(rng, budget, floor);
   /** @type {Array<"curl" | "uturn" | "bent" | "straight">} */
   const order = [preferred];
   for (const s of SHAPE_FALLBACK) {
     if (!order.includes(s)) order.push(s);
   }
-  for (const kind of order) {
-    let path = null;
-    if (kind === "curl") path = realizeCurl(start, exitDir, size, occupied, rng, budget);
-    else if (kind === "uturn") path = realizeUTurn(start, exitDir, size, occupied, rng, budget);
-    else if (kind === "bent") path = realizeBent(start, exitDir, size, occupied, rng, budget);
-    else path = realizeStraight(start, exitDir, size, occupied, budget);
-    if (path && path.length >= 2) return path;
+
+  /** @param {number} need */
+  const tryOrder = (need) => {
+    for (const kind of order) {
+      if (need >= 1 && kind === "straight") continue;
+      if (need >= 2 && kind === "bent") continue;
+      let path = null;
+      if (kind === "curl") {
+        path = realizeCurl(start, exitDir, size, occupied, rng, budget, need);
+      } else if (kind === "uturn") {
+        path = realizeUTurn(start, exitDir, size, occupied, rng, budget);
+      } else if (kind === "bent") {
+        path = realizeBent(start, exitDir, size, occupied, rng, budget);
+      } else {
+        path = realizeStraight(start, exitDir, size, occupied, budget);
+      }
+      if (path && path.length >= 2 && countPathTurns(path) >= need) return path;
+    }
+    return null;
+  };
+
+  while (floor >= 0) {
+    const path = tryOrder(floor);
+    if (path) return path;
+    floor -= 1;
   }
   return null;
 }
@@ -306,11 +414,13 @@ export function growWindingPath(start, exitDir, size, occupied, rng, shape) {
  * @param {number} size
  * @param {number} count
  * @param {() => number} [rng]
+ * @param {number} [minBends] minimum turns on puzzle snakes (fillers may soften)
  */
-export function buildSolvableLevel(size, count, rng = Math.random) {
+export function buildSolvableLevel(size, count, rng = Math.random, minBends = 0) {
   const occupied = new Set();
   const placed = [];
   const margin = centerMarginForSize(size);
+  const floor = Math.max(0, minBends | 0);
 
   let attempts = 0;
   while (placed.length < count && attempts < count * 180) {
@@ -326,7 +436,7 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
     if (starts.length === 0) continue;
 
     const start = starts[Math.floor(rng() * starts.length)];
-    const path = growWindingPath(start, dir, size, occupied, rng);
+    const path = growWindingPath(start, dir, size, occupied, rng, undefined, floor);
     if (!path) continue;
 
     if (!canEscapePath(path, dir, size, occupied)) continue;
@@ -335,7 +445,7 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
     placed.push({ dir, path });
   }
 
-  fillEmptyCells(size, occupied, placed, rng);
+  fillEmptyCells(size, occupied, placed, rng, floor);
   repairToSolvable({ size, arrows: placed });
 
   return { size, arrows: placed };
@@ -343,14 +453,17 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
 
 /**
  * Fill empty center cells with arrows (prefer a 3-cell L, then length 2, then 1).
+ * When `minBends` ≥ 1, always try an L first so fillers are not all sticks.
  * Edge cells may remain empty.
  * @param {number} size
  * @param {Set<string>} occupied
  * @param {Array} placed
  * @param {() => number} rng
+ * @param {number} [minBends]
  */
-function fillEmptyCells(size, occupied, placed, rng) {
+function fillEmptyCells(size, occupied, placed, rng, minBends = 0) {
   const margin = centerMarginForSize(size);
+  const preferBend = minBends >= 1;
 
   for (let y = margin; y < size - margin; y++) {
     for (let x = margin; x < size - margin; x++) {
@@ -360,7 +473,7 @@ function fillEmptyCells(size, occupied, placed, rng) {
       const dirOptions = [...DIRS].sort(() => rng() - 0.5);
       let placedHere = false;
 
-      if (rng() < 0.6) {
+      if (preferBend || rng() < 0.6) {
         for (const d1 of dirOptions) {
           const [dx1, dy1] = DELTA_ARR[d1];
           const x1 = x + dx1;
@@ -485,14 +598,16 @@ export function rngFrom(seed) {
  * @param {number} seed
  * @param {number} size
  * @param {number} count
+ * @param {number} [minBends]
  */
-export function makeHandLevel(seed, size, count) {
-  let best = buildSolvableLevel(size, count, rngFrom(seed));
-  for (let i = 1; i < 8; i++) {
-    const candidate = buildSolvableLevel(size, count, rngFrom(seed + i * 97));
-    if (candidate.arrows.length > best.arrows.length) best = candidate;
+export function makeHandLevel(seed, size, count, minBends = 0) {
+  let best = null;
+  for (let i = 0; i < 8; i++) {
+    const candidate = buildSolvableLevel(size, count, rngFrom(seed + i * 97), minBends);
+    if (!isSolvable(candidate.size, candidate.arrows)) continue;
+    if (!best || candidate.arrows.length > best.arrows.length) best = candidate;
   }
-  return best;
+  return best || buildSolvableLevel(size, count, rngFrom(seed), minBends);
 }
 
 /** Level 1 — tiny tutorial with an obvious free arrow and a blocked one */
@@ -668,21 +783,23 @@ export const HAND_LEVEL_SPECS = [
 /**
  * Difficulty parameters for a level index (used by the level generator script).
  * Size and snake-count never drop after the tutorial — the curve continues from
- * the last hand spec instead of resetting to an 8×8.
+ * the last hand spec instead of resetting to an 8×8. `minBends` ramps so later
+ * pack indices force windier puzzle arrows (0 until 20, then +1 each 10 levels).
  *
  * @param {number} levelIndex
  */
 export function levelParamsForIndex(levelIndex) {
   if (levelIndex <= 0) return { tutorial: true };
+  const minBends = minBendsForLevelIndex(levelIndex);
   if (levelIndex <= HAND_LEVEL_SPECS.length) {
     const spec = HAND_LEVEL_SPECS[levelIndex - 1];
-    return { seed: spec.seed, size: spec.size, count: spec.count };
+    return { seed: spec.seed, size: spec.size, count: spec.count, minBends };
   }
   const last = HAND_LEVEL_SPECS[HAND_LEVEL_SPECS.length - 1];
   const extra = levelIndex - HAND_LEVEL_SPECS.length;
   const size = Math.min(16, last.size + Math.floor((extra - 1) / 4));
   const count = last.count + extra;
-  return { seed: 1000 + levelIndex * 17, size, count };
+  return { seed: 1000 + levelIndex * 17, size, count, minBends };
 }
 
 /**
@@ -692,5 +809,5 @@ export function levelParamsForIndex(levelIndex) {
 export function buildLevelForIndex(levelIndex) {
   const params = levelParamsForIndex(levelIndex);
   if (params.tutorial) return TUTORIAL;
-  return makeHandLevel(params.seed, params.size, params.count);
+  return makeHandLevel(params.seed, params.size, params.count, params.minBends);
 }

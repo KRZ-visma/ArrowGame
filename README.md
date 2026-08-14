@@ -8,6 +8,8 @@ After Pages is enabled for this repo:
 
 **https://krz-visma.github.io/ArrowGame/**
 
+Installable as a PWA (Add to Home Screen / install). The service worker caches the app shell so levels stay playable offline after the first visit.
+
 ## Local
 
 Serve over HTTP (ES modules will not load from `file://`):
@@ -20,7 +22,8 @@ Then open `http://localhost:8080`.
 
 ## Files
 
-- `index.html` — shell (`viewport-fit=cover`, module entry)
+- `index.html` — shell (`viewport-fit=cover`, module entry, PWA meta)
+- `manifest.webmanifest` / `sw.js` / `icons/*` — install + offline shell
 - `game.js` — UI, styles, canvas, input
 - `js/logic.js` — escape / occupancy rules
 - `js/levels.js` — tutorial, hand pack, seeded generator
