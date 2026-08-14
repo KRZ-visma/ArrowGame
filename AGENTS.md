@@ -36,10 +36,10 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - No generic AI look (purple gradients, cream + terracotta, broadsheet)
 - One job per section; board is the hero — no card clutter in the play surface
 - **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
-- **Reset vs Menu vs Skip** — the toolbar Reset button restarts the **current** level only (and the fail splash Reset does the same). Level number, stats, All levels, skip, and “start over from zero” live in the Menu overlay (`btnMenu`). Skip also appears on the fail splash when a slot remains. Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into Reset
+- **Restart vs Menu vs Skip** — toolbar restart and fail-splash restart both redo the **current** level only. Level number, stats, All levels, skip, and start-over-from-zero live in the Menu overlay. Skip also appears on the fail splash when a slot remains. Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into current-level restart
 - **Skip quota** — at most three outstanding skipped (uncleared) levels. Skip unlocks the next pack index. Finishing a skipped level from All levels restores a slot. Skip is disabled on cleared or already-skipped levels, and when the quota is empty
 - **Overlay copy** — one fact per line. Kicker, title, body, and buttons must not restate the same destination, outcome, or action. The primary button is the action; body copy is not a second CTA
-- **End splash** — win and fail share one overlay; do not auto-advance. Win shows stars and requires **Next**. A 1- or 2-star clear also offers **Retry for 3 stars** (`btnEndRetry`, restarts this level; Next still advances). Hide retry on a 3-star win and on fail — the retry label lives on the button, not in body copy. Fail requires **Reset**
+- **End splash** — win and fail share one overlay; do not auto-advance. Win shows stars and a continue action (advances). A 1- or 2-star clear also offers retry-this-level on a button, not in body copy; hide that retry on a 3-star win and on fail. Fail offers restart-this-level
 - **All levels** — each cell shows three ★ `.level-pip` glyphs; earned ones need `.level-pip.filled` (accent color, not clip-path). That rule is separate from `.star.filled` on the win splash — a missing fill or tiny clip-path pips make 1/2/3 look uncleared
 - The painted **tip points the crawl/exit `dir`**. The last path segment matches `dir`. A mismatch (chevron one way, slide another) reads as broken, not as extra puzzle depth — keep winding bodies, but the head still faces the way it leaves
 
@@ -79,6 +79,7 @@ When a pull request surfaces something future agents should know, add a small, c
 - New or moved file → add or adjust a row in **Files (by domain)**
 - New convention, API, or storage detail → one bullet under **Stack**, **Design**, or **Do not**
 - UI / copy → a rule the surface must keep complying with (what must remain true), not a freeze of the current headline, button label, or body string
+- Design / Stack / Do not → name invariants (roles, when something appears, what must not happen). Do not freeze current button labels, headlines, or DOM ids unless the id is the stable contract (e.g. storage keys, `STORAGE_KEYS`)
 - Bug, edge case, or solvability pitfall → short note so the mistake is not repeated
 - Workflow or testing lesson → clarify **Execution** or link deploy/CI paths that were easy to miss
 
