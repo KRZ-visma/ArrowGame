@@ -10,6 +10,7 @@ import {
   rngFrom,
   buildLevelForIndex,
 } from "../js/levels.js";
+import { isCenterCell } from "../js/level-build.js";
 import { canEscapePath, cellKey } from "../js/logic.js";
 
 describe("TUTORIAL", () => {
@@ -49,6 +50,17 @@ describe("level generation", () => {
         assert.equal(seen.has(k), false, `overlap at ${k}`);
         seen.add(k);
       }
+    }
+  });
+
+  it("starts each arrow tail in the center zone", () => {
+    const level = buildSolvableLevel(10, 12, rngFrom(77));
+    for (const arrow of level.arrows) {
+      const [x, y] = arrow.path[0];
+      assert.ok(
+        isCenterCell(x, y, level.size),
+        `tail at (${x}, ${y}) should be in the center zone on size ${level.size}`,
+      );
     }
   });
 

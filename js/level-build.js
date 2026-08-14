@@ -7,8 +7,26 @@ import {
 } from "./logic.js";
 
 /**
+ * Inner-board margin for center-origin placement (tail must start here).
+ * @param {number} size
+ */
+export function centerMarginForSize(size) {
+  return Math.max(1, Math.floor(size / 4));
+}
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} size
+ */
+export function isCenterCell(x, y, size) {
+  const margin = centerMarginForSize(size);
+  return x >= margin && y >= margin && x < size - margin && y < size - margin;
+}
+
+/**
  * Build a solvable level by placing arrows in reverse clear order:
- * each new arrow crawls in from off-board along its tip direction onto empty cells.
+ * each new arrow grows outward from an empty center cell (tail in the middle zone).
  * Clearing in reverse of placement order is always possible (snake-follow exit).
  *
  * @param {number} size
@@ -18,6 +36,7 @@ import {
 export function buildSolvableLevel(size, count, rng = Math.random) {
   const occupied = new Set();
   const placed = [];
+  const margin = centerMarginForSize(size);
 
   let attempts = 0;
   while (placed.length < count && attempts < count * 120) {
@@ -25,27 +44,24 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
     const dir = DIRS[Math.floor(rng() * 4)];
     const [dx, dy] = DELTA_ARR[dir];
 
-    const entries = [];
-    if (dir === "E") {
-      for (let y = 0; y < size; y++) entries.push([-1, y]);
-    } else if (dir === "W") {
-      for (let y = 0; y < size; y++) entries.push([size, y]);
-    } else if (dir === "S") {
-      for (let x = 0; x < size; x++) entries.push([x, -1]);
-    } else {
-      for (let x = 0; x < size; x++) entries.push([x, size]);
+    const starts = [];
+    for (let y = margin; y < size - margin; y++) {
+      for (let x = margin; x < size - margin; x++) {
+        if (!occupied.has(cellKey(x, y))) starts.push([x, y]);
+      }
     }
+    if (starts.length === 0) continue;
 
-    const entry = entries[Math.floor(rng() * entries.length)];
+    const start = starts[Math.floor(rng() * starts.length)];
     const len = 2 + Math.floor(rng() * Math.min(5, Math.max(2, Math.floor(size / 2))));
 
-    const path = [];
-    let x = entry[0];
-    let y = entry[1];
+    const path = [[start[0], start[1]]];
+    let x = start[0];
+    let y = start[1];
     let travel = dir;
     let ok = true;
 
-    for (let i = 0; i < len; i++) {
+    for (let i = 1; i < len; i++) {
       if (path.length >= 2 && rng() < 0.45) {
         travel = TURNS[travel][Math.floor(rng() * 2)];
       } else {
