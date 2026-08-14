@@ -13,7 +13,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 - Strikes: 3 blocked taps (arrow cannot move) fail the run. Stars on a clear: 3 at par (arrow count), 2 at +1 tap, 1 otherwise — extras are blocked taps; each arrow leaves once so par is `arrows.length`
 - UI copy language: **English**
 - Unit tests: Node’s built-in test runner (`npm test` → `node --test test/`)
-- Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100). Every baked level must pass `isSolvable` (the generator repairs filler deadlocks; the script exits if a level is still stuck). Pack order follows generation index (tutorial first) — do not sort by `levelComplexity`. That score is clearance-led (`blocked0`, `waves`, `depthSum`; no board `size`) for analysis only. `levelParamsForIndex` must not drop size or snake-count after the hand specs
+- Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100). Every baked level must pass `isSolvable` (the generator repairs filler deadlocks; the script exits if a level is still stuck). Pack order follows generation index (tutorial first) — do not sort by `levelComplexity`. That score is clearance-led (`blocked0`, `waves`, `depthSum`; no board `size`) for analysis only. `levelParamsForIndex` must not drop size or snake-count after the hand specs. Puzzle-arrow `minBends` ramps with pack index (`minBendsForLevelIndex`: 0 until 20, then +1 each 10 levels); growth hugs occupied cells and softens the floor only when nothing fits
 
 ## Files (by domain)
 
@@ -22,7 +22,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
 | Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD (level + chances), end splash (win/fail + stars), All levels overlay, Menu overlay, pointer/keyboard |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` (greedy clear is enough — leaving only frees cells) — **unit tests** |
-| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places winding multi-cell puzzle arrows via `growWindingPath` (bends, U-turns, multi-turn curls; last segment matches exit dir; tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer a 3-cell L, then length 2, allow length 1; edges may stay empty); `repairToSolvable` then reorients leftover deadlocks (`fillEmptyCells` does not check escape, so two fillers can face each other); repair may reverse a snake (new tail can sit on an edge; at least one endpoint stays in the center); TUTORIAL is built via `buildTutorial()` and includes an L-shape; pack order follows generation index; `levelComplexity` is clearance-led (not used to reorder) — **unit tests** |
+| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places winding multi-cell puzzle arrows via `growWindingPath` (bends, U-turns, multi-turn curls/coils that hug neighbors; `minBends` floor; last segment matches exit dir; tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer a 3-cell L — always when `minBends` ≥ 1 — then length 2, allow length 1; edges may stay empty); `repairToSolvable` then reorients leftover deadlocks (`fillEmptyCells` does not check escape, so two fillers can face each other); repair may reverse a snake (new tail can sit on an edge; at least one endpoint stays in the center); `makeHandLevel` keeps the densest **solvable** candidate across seed retries; TUTORIAL is built via `buildTutorial()` and includes an L-shape; pack order follows generation index; `levelComplexity` is clearance-led (not used to reorder) — **unit tests** |
 | Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress`, star records, skip quota (`MAX_SKIPS` / `skipLevel` / `canSkipLevel`), `starsForClear` / `MAX_STRIKES` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
@@ -50,7 +50,7 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 ### Idea → approval → build
 
 1. **Show a short idea first** — what you want to do, why, which modules/files, and risks (level solvability, storage, deploy paths). **Validate the request:** if it fights a core read (tip = leave direction, mobile-first, …) or looks like a worse game, say so, give a short opinion and an alternative, and wait. Do not treat “the user just said it” as a skip-judgment card. No code, no branch, no commit/PR in this phase.
-2. **Stop and wait** for explicit user approval, e.g. **"ja bouwen"**, "build it", "go", "akkoord".
+2. **Stop and wait** for explicit user approval, e.g. **"build it"**, "go", "approved", "ok to build".
 3. **Only then build** — without that confirmation do not implement, including “just preparing”.
 4. **Exceptions:**
    - Pure questions / explanation → answer only, no build.
@@ -100,7 +100,7 @@ When a pull request surfaces something future agents should know, add a small, c
 ## Do not
 
 - Ship a feature PR without updating `AGENTS.md` when the change introduced something future agents should know
-- Change code without a prior idea and explicit approval (“ja bouwen” etc.), unless an exception above applies
+- Change code without a prior idea and explicit approval (“build it” / “go” etc.), unless an exception above applies
 - Add dependencies or a bundler “for later”
 - Dump new domain logic into `game.js` when it belongs in `js/logic.js`, `js/levels.js`, or `js/progress.js`
 - Silently change the localStorage schema — add keys to `STORAGE_KEYS` (as with `arrow-out-stars`) instead of overloading `arrow-out-level`. Additive fields on `arrow-out-stars` (such as `skipped`) must parse missing values as defaults so old saves keep working

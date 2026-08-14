@@ -11,6 +11,7 @@ import {
   buildLevelForIndex,
   repairToSolvable,
   levelParamsForIndex,
+  minBendsForLevelIndex,
   levelComplexity,
   orderLevelsByComplexity,
   HAND_LEVEL_SPECS,
@@ -31,6 +32,14 @@ describe("chooseArrowShape / growWindingPath", () => {
     assert.equal(chooseArrowShape(() => 0, 5), "uturn");
     assert.equal(chooseArrowShape(() => 0, 3), "bent");
     assert.equal(chooseArrowShape(() => 0, 2), "straight");
+  });
+
+  it("raises curl bias and skips straight when minBends is set", () => {
+    assert.equal(chooseArrowShape(() => 0.95, 8, 1), "bent");
+    assert.equal(chooseArrowShape(() => 0.5, 6, 1), "uturn");
+    assert.equal(chooseArrowShape(() => 0.1, 6, 1), "curl");
+    assert.equal(chooseArrowShape(() => 0.2, 6, 2), "curl");
+    assert.equal(chooseArrowShape(() => 0.9, 6, 2), "uturn");
   });
 
   it("grows a U-turn that reverses and still ends in the exit dir", () => {
@@ -60,6 +69,28 @@ describe("chooseArrowShape / growWindingPath", () => {
     assert.ok(path);
     assert.equal(countPathTurns(path), 0);
     assert.equal(dirBetween(path[path.length - 2], path[path.length - 1]), "S");
+  });
+
+  it("honors minBends when growing without a forced shape", () => {
+    for (let seed = 1; seed <= 16; seed += 1) {
+      const path = growWindingPath([5, 5], "E", 14, new Set(), rngFrom(seed), undefined, 2);
+      assert.ok(path);
+      assert.ok(countPathTurns(path) >= 2, `seed ${seed} turns ${countPathTurns(path)}`);
+      assert.equal(dirBetween(path[path.length - 2], path[path.length - 1]), "E");
+    }
+  });
+
+  it("curls toward nearby occupied cells when hugging", () => {
+    const occupied = new Set();
+    for (let y = 3; y <= 6; y += 1) occupied.add(cellKey(8, y));
+    let hugged = 0;
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const path = growWindingPath([5, 5], "E", 14, occupied, rngFrom(seed), "curl", 2);
+      assert.ok(path);
+      assert.ok(countPathTurns(path) >= 2);
+      if (path.some(([x]) => x >= 7)) hugged += 1;
+    }
+    assert.ok(hugged >= 4, `expected some paths to lean toward occupied, got ${hugged}`);
   });
 
   it("grows both L-bends and jogs", () => {
@@ -207,6 +238,7 @@ describe("level generation", () => {
         params.count >= prevCount,
         `count dropped at index ${i}: ${params.count} < ${prevCount}`,
       );
+      assert.equal(params.minBends, minBendsForLevelIndex(i));
       prevSize = params.size;
       prevCount = params.count;
     }
@@ -216,6 +248,34 @@ describe("level generation", () => {
     const lastHand = levelParamsForIndex(HAND_LEVEL_SPECS.length);
     assert.ok(afterHand.size >= lastHand.size);
     assert.ok(afterHand.count >= lastHand.count);
+  });
+
+  it("ramps minBends with pack index", () => {
+    assert.equal(minBendsForLevelIndex(0), 0);
+    assert.equal(minBendsForLevelIndex(19), 0);
+    assert.equal(minBendsForLevelIndex(20), 1);
+    assert.equal(minBendsForLevelIndex(29), 1);
+    assert.equal(minBendsForLevelIndex(30), 2);
+    assert.equal(minBendsForLevelIndex(50), 4);
+    assert.equal(levelParamsForIndex(20).minBends, 1);
+    assert.equal(levelParamsForIndex(30).minBends, 2);
+  });
+
+  it("builds windier puzzle arrows when minBends is raised", () => {
+    const loose = buildSolvableLevel(12, 14, rngFrom(41), 0);
+    const tight = buildSolvableLevel(12, 14, rngFrom(41), 2);
+    const longLoose = loose.arrows.filter((a) => a.path.length >= 4);
+    const longTight = tight.arrows.filter((a) => a.path.length >= 4);
+    assert.ok(longTight.length >= 3, "expected several puzzle snakes");
+    const meeting = longTight.filter((a) => countPathTurns(a.path) >= 2);
+    assert.ok(
+      meeting.length >= Math.ceil(longTight.length * 0.7),
+      `expected most long snakes to keep ≥2 bends, got ${meeting.length}/${longTight.length}`,
+    );
+    const avg = (arrows) =>
+      arrows.reduce((s, a) => s + countPathTurns(a.path), 0) / Math.max(1, arrows.length);
+    assert.ok(avg(longTight) > avg(longLoose));
+    assert.equal(isSolvable(tight.size, tight.arrows), true);
   });
 
   it("keeps the tutorial as pack level 1 and generates later indices deterministically", () => {
