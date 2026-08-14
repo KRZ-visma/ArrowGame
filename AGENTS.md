@@ -39,6 +39,7 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - **Reset vs Menu vs Skip** — the toolbar Reset button restarts the **current** level only (and the fail splash Reset does the same). Level number, stats, All levels, skip, and “start over from zero” live in the Menu overlay (`btnMenu`). Skip also appears on the fail splash when a slot remains. Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into Reset
 - **Skip quota** — at most three outstanding skipped (uncleared) levels. Skip unlocks the next pack index. Finishing a skipped level from All levels restores a slot. Skip is disabled on cleared or already-skipped levels, and when the quota is empty
 - **End splash** — win and fail share one overlay. Win shows stars + the next level number and requires **Next**. Fail tells the player they did not complete the level and requires **Reset**. Do not auto-advance
+- **All levels** — each cell shows three ★ `.level-pip` glyphs; earned ones need `.level-pip.filled` (accent color, not clip-path). That rule is separate from `.star.filled` on the win splash — a missing fill or tiny clip-path pips make 1/2/3 look uncleared
 
 ## Workflow
 
