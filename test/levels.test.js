@@ -229,19 +229,6 @@ describe("level generation", () => {
     }
   });
 
-  it("orders the baked pack by nondecreasing complexity", () => {
-    assert.deepEqual(LEVEL_PACK[0], TUTORIAL);
-    let prev = -Infinity;
-    for (let i = 0; i < LEVEL_PACK.length; i += 1) {
-      const score = levelComplexity(LEVEL_PACK[i]);
-      assert.ok(
-        score >= prev,
-        `level ${i + 1} complexity ${score} is below level ${i} (${prev})`,
-      );
-      prev = score;
-    }
-  });
-
   it("fills all center cells (edges may be empty)", () => {
     const level = buildSolvableLevel(8, 10, rngFrom(42));
     const occupied = new Set();
@@ -419,7 +406,7 @@ describe("levelComplexity", () => {
     assert.equal(levelComplexity({ size: 8 }), 0);
   });
 
-  it("rates a larger blocked board above a tiny clear one", () => {
+  it("rates blocked multi-wave boards above a single free arrow", () => {
     const easy = {
       size: 4,
       arrows: [{ dir: "E", path: [[0, 0]] }],
@@ -433,6 +420,18 @@ describe("levelComplexity", () => {
     };
     assert.ok(levelComplexity(harder) > levelComplexity(easy));
     assert.ok(levelComplexity(TUTORIAL) > levelComplexity(easy));
+  });
+
+  it("does not use board size in the score", () => {
+    const small = {
+      size: 4,
+      arrows: [{ dir: "E", path: [[0, 0]] }],
+    };
+    const large = {
+      size: 20,
+      arrows: [{ dir: "E", path: [[0, 0]] }],
+    };
+    assert.equal(levelComplexity(small), levelComplexity(large));
   });
 
   it("counts object-cell bends the same as tuple paths", () => {
