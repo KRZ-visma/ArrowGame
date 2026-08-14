@@ -39,18 +39,19 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - **Reset vs Menu vs Skip** — the toolbar Reset button restarts the **current** level only (and the fail splash Reset does the same). Level number, stats, All levels, skip, and “start over from zero” live in the Menu overlay (`btnMenu`). Skip also appears on the fail splash when a slot remains. Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into Reset
 - **Skip quota** — at most three outstanding skipped (uncleared) levels. Skip unlocks the next pack index. Finishing a skipped level from All levels restores a slot. Skip is disabled on cleared or already-skipped levels, and when the quota is empty
 - **End splash** — win and fail share one overlay. Win shows stars + the next level number and requires **Next**. Fail tells the player they did not complete the level and requires **Reset**. Do not auto-advance
+- The painted **tip points the crawl/exit `dir`**. The last path segment matches `dir`. A mismatch (chevron one way, slide another) reads as broken, not as extra puzzle depth — keep winding bodies, but the head still faces the way it leaves
 
 ## Workflow
 
 ### Idea → approval → build
 
-1. **Show a short idea first** — what you want to do, why, which modules/files, and risks (level solvability, storage, deploy paths). No code, no branch, no commit/PR in this phase.
+1. **Show a short idea first** — what you want to do, why, which modules/files, and risks (level solvability, storage, deploy paths). **Validate the request:** if it fights a core read (tip = leave direction, mobile-first, …) or looks like a worse game, say so, give a short opinion and an alternative, and wait. Do not treat “the user just said it” as a skip-judgment card. No code, no branch, no commit/PR in this phase.
 2. **Stop and wait** for explicit user approval, e.g. **"ja bouwen"**, "build it", "go", "akkoord".
 3. **Only then build** — without that confirmation do not implement, including “just preparing”.
 4. **Exceptions:**
    - Pure questions / explanation → answer only, no build.
-   - Explicit “build directly …” in the same request → may start immediately.
-   - **Fine-tuning** an already approved idea (small adjustment within the same scope) → may continue without new approval.
+   - Explicit “build directly …” in the same request → may start immediately **unless** the request fights a core rule; then still push back first.
+   - **Fine-tuning** an already approved idea (small adjustment within the same scope) → may continue without new approval, but still flag it if the tweak would break a core read (e.g. tip ≠ leave direction).
    - Anything that is effectively a **new idea** (different direction, extra feature, other domain, other approach) → show a new idea and wait for approval again.
 
 ### Execution (after approval)
@@ -102,3 +103,5 @@ When a pull request surfaces something future agents should know, add a small, c
 - Add Playwright/e2e UI tests by default — use **unit tests** for puzzle logic instead
 - Ship a `LEVEL_PACK` entry that `isSolvable` rejects — `fillEmptyCells` can deadlock (facing fillers); `repairToSolvable` must run after fill, and `generate-levels` must fail the run if a level stays stuck
 - Place a winding arrow whose head crawls into its own body — `canEscapePath` rejects tight inward spirals; U-turns must end traveling in the exit dir (walk opposite, jog, then out)
+- Paint a tip that disagrees with how the arrow leaves — last segment and chevron match crawl `dir`
+- Execute a gameplay change that fights a core read just because the user asked — push back with an opinion and an alternative first
