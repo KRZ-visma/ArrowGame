@@ -10,8 +10,8 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildLevelForIndex } from "../js/level-build.js";
-import { isSolvable } from "../js/logic.js";
+import { buildLevelForIndex, orderLevelsByComplexity } from "../js/level-build.js";
+import { isSolvable, levelComplexity } from "../js/logic.js";
 
 const DEFAULT_COUNT = 100;
 const rawCount = process.argv[2];
@@ -22,16 +22,26 @@ if (!Number.isFinite(count) || count < 1 || !Number.isInteger(count)) {
   process.exit(1);
 }
 
-const levels = [];
+const generated = [];
 for (let i = 0; i < count; i += 1) {
   const level = buildLevelForIndex(i);
   if (!isSolvable(level.size, level.arrows)) {
     console.error(`Generated level ${i + 1} (index ${i}) is unsolvable`);
     process.exit(1);
   }
-  levels.push(level);
+  generated.push(level);
   if ((i + 1) % 25 === 0 || i + 1 === count) {
     process.stderr.write(`Generated ${i + 1}/${count} levels\n`);
+  }
+}
+
+const levels = orderLevelsByComplexity(generated);
+for (let i = 1; i < levels.length; i += 1) {
+  const prev = levelComplexity(levels[i - 1].size, levels[i - 1].arrows);
+  const next = levelComplexity(levels[i].size, levels[i].arrows);
+  if (next < prev) {
+    console.error(`Complexity dropped at level ${i + 1} (index ${i}): ${prev} → ${next}`);
+    process.exit(1);
   }
 }
 

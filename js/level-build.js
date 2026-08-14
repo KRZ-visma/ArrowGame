@@ -7,6 +7,7 @@ import {
   canEscapeAmong,
   stuckArrows,
   isSolvable,
+  levelComplexity,
 } from "./logic.js";
 
 /**
@@ -284,7 +285,27 @@ function buildTutorial() {
 
 export const TUTORIAL = buildTutorial();
 
-/** Seed/size/count for the first curated pack (levels 2–12). */
+/**
+ * Keep `levels[0]` first (tutorial). Sort the rest by `levelComplexity`
+ * so the shipped pack never drops in difficulty (the generated-param curve
+ * used to restart at size 8 after the hand pack, which made level 13 easier
+ * than level 12).
+ *
+ * @param {Array<{ size: number, arrows: Array }>} levels
+ */
+export function orderLevelsByComplexity(levels) {
+  if (levels.length <= 1) return levels.slice();
+  const [first, ...rest] = levels;
+  const ranked = rest.map((level, i) => ({
+    level,
+    score: levelComplexity(level.size, level.arrows),
+    i,
+  }));
+  ranked.sort((a, b) => a.score - b.score || a.i - b.i);
+  return [first, ...ranked.map((entry) => entry.level)];
+}
+
+/** Seed/size/count inputs for early generated boards (then ordered by complexity). */
 export const HAND_LEVEL_SPECS = [
   { seed: 42, size: 7, count: 8 },
   { seed: 77, size: 8, count: 11 },
@@ -300,7 +321,8 @@ export const HAND_LEVEL_SPECS = [
 ];
 
 /**
- * Difficulty parameters for a level index (used by the level generator script).
+ * Difficulty parameters for a generation index. The shipped pack is this
+ * sequence reordered by `orderLevelsByComplexity` (tutorial stays first).
  * @param {number} levelIndex
  */
 export function levelParamsForIndex(levelIndex) {

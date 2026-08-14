@@ -9,10 +9,11 @@ import {
   getLevelData,
   rngFrom,
   buildLevelForIndex,
+  orderLevelsByComplexity,
   repairToSolvable,
 } from "../js/levels.js";
 import { isCenterCell } from "../js/level-build.js";
-import { canEscapePath, cellKey, isSolvable, stuckArrows } from "../js/logic.js";
+import { canEscapePath, cellKey, isSolvable, stuckArrows, levelComplexity } from "../js/logic.js";
 
 describe("TUTORIAL", () => {
   it("has both free and blocked arrows on a small board", () => {
@@ -84,9 +85,28 @@ describe("level generation", () => {
     assert.deepEqual(getLevelData(-3), LEVEL_PACK[0]);
   });
 
-  it("matches the generator output for sampled indices", () => {
-    for (const index of [0, 1, 11, 12, 50, 99]) {
-      assert.deepEqual(LEVEL_PACK[index], buildLevelForIndex(index));
+  it("keeps the tutorial first and includes generated boards", () => {
+    assert.deepEqual(LEVEL_PACK[0], TUTORIAL);
+    assert.deepEqual(LEVEL_PACK[0], buildLevelForIndex(0));
+    for (const index of [1, 11, 12]) {
+      const built = JSON.stringify(buildLevelForIndex(index));
+      assert.ok(
+        LEVEL_PACK.some((level) => JSON.stringify(level) === built),
+        `generated index ${index} should appear in the ordered pack`,
+      );
+    }
+  });
+
+  it("orders pack levels by non-decreasing complexity", () => {
+    assert.ok(LEVEL_PACK.length > 1);
+    let prev = levelComplexity(LEVEL_PACK[0].size, LEVEL_PACK[0].arrows);
+    for (let i = 1; i < LEVEL_PACK.length; i += 1) {
+      const score = levelComplexity(LEVEL_PACK[i].size, LEVEL_PACK[i].arrows);
+      assert.ok(
+        score >= prev,
+        `level ${i + 1} complexity ${score} dropped below ${prev}`,
+      );
+      prev = score;
     }
   });
 
@@ -123,6 +143,41 @@ describe("level generation", () => {
         `level ${i + 1} (index ${i}) should be solvable`,
       );
     }
+  });
+});
+
+describe("orderLevelsByComplexity", () => {
+  it("returns a copy of empty or single-item packs", () => {
+    assert.deepEqual(orderLevelsByComplexity([]), []);
+    const one = [{ size: 4, arrows: [] }];
+    const out = orderLevelsByComplexity(one);
+    assert.deepEqual(out, one);
+    assert.notEqual(out, one);
+  });
+
+  it("keeps the first level and sorts the rest by complexity", () => {
+    const tutorial = { size: 6, arrows: [{ dir: "E", path: [[0, 0]] }] };
+    const easy = { size: 8, arrows: [{ dir: "E", path: [[0, 0]] }] };
+    const hard = {
+      size: 14,
+      arrows: [
+        { dir: "E", path: [[0, 0], [1, 0]] },
+        { dir: "S", path: [[2, 0], [2, 1]] },
+      ],
+    };
+    const ordered = orderLevelsByComplexity([tutorial, hard, easy]);
+    assert.equal(ordered[0], tutorial);
+    assert.equal(ordered[1], easy);
+    assert.equal(ordered[2], hard);
+  });
+
+  it("breaks complexity ties by original order", () => {
+    const first = { size: 3, arrows: [] };
+    const a = { size: 4, arrows: [{ dir: "E", path: [[0, 0]] }] };
+    const b = { size: 4, arrows: [{ dir: "E", path: [[0, 0]] }] };
+    const ordered = orderLevelsByComplexity([first, a, b]);
+    assert.equal(ordered[1], a);
+    assert.equal(ordered[2], b);
   });
 });
 

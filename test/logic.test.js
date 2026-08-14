@@ -11,6 +11,7 @@ import {
   isSolvable,
   stuckArrows,
   canEscapeAmong,
+  levelComplexity,
 } from "../js/logic.js";
 
 describe("stepsToExit", () => {
@@ -223,5 +224,45 @@ describe("isSolvable / stuckArrows", () => {
   it("clears after the blocking partner is gone", () => {
     const arrows = [{ dir: "N", path: [[5, 7]] }];
     assert.equal(isSolvable(14, arrows), true);
+  });
+});
+
+describe("levelComplexity", () => {
+  it("rates an empty board by size alone", () => {
+    assert.equal(levelComplexity(4, []), 400000);
+    assert.equal(levelComplexity(4), 400000);
+  });
+
+  it("ranks a larger board above a smaller one", () => {
+    const small = [{ dir: "E", path: [[0, 0], [1, 0], [2, 0]] }];
+    const large = [{ dir: "E", path: [[0, 0]] }];
+    assert.ok(levelComplexity(14, large) > levelComplexity(8, small));
+  });
+
+  it("raises the score for extra arrows, cells, blocks, and bends", () => {
+    const straight = [{ dir: "E", path: [[0, 0], [1, 0], [2, 0]] }];
+    const bent = [{ dir: "S", path: [[0, 0], [1, 0], [1, 1]] }];
+    assert.ok(levelComplexity(6, bent) > levelComplexity(6, straight));
+
+    const one = [{ dir: "E", path: [[0, 0]] }];
+    const two = [
+      { dir: "E", path: [[0, 0]] },
+      { dir: "E", path: [[0, 1]] },
+    ];
+    assert.ok(levelComplexity(6, two) > levelComplexity(6, one));
+
+    const blocked = [
+      { dir: "E", path: [[0, 0]] },
+      { dir: "E", path: [[2, 0]] },
+    ];
+    assert.ok(levelComplexity(6, blocked) > levelComplexity(6, two));
+  });
+
+  it("still scores an unsolvable board", () => {
+    const arrows = [
+      { dir: "S", path: [[5, 5]] },
+      { dir: "N", path: [[5, 7]] },
+    ];
+    assert.ok(levelComplexity(14, arrows) > levelComplexity(14, []));
   });
 });

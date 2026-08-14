@@ -234,3 +234,56 @@ export function stuckArrows(size, arrows) {
 export function isSolvable(size, arrows) {
   return stuckArrows(size, arrows).length === 0;
 }
+
+/**
+ * Count direction changes along a snake (length < 3 cannot bend).
+ * @param {Array<Cell | [number, number]>} path
+ */
+function pathBendCount(path) {
+  const cells = normalizePath(path);
+  let n = 0;
+  for (let i = 2; i < cells.length; i++) {
+    const dx0 = cells[i - 1].x - cells[i - 2].x;
+    const dy0 = cells[i - 1].y - cells[i - 2].y;
+    const dx1 = cells[i].x - cells[i - 1].x;
+    const dy1 = cells[i].y - cells[i - 1].y;
+    if (dx0 !== dx1 || dy0 !== dy1) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Integer difficulty of a board. Size is the high-order term so a larger grid
+ * always outranks a smaller one; within a size, more arrows, occupancy, forced
+ * waiting (blocked mass while greedy-clearing), and bends raise the score.
+ *
+ * @param {number} size
+ * @param {Array<{ dir: Dir, path: Array<Cell | [number, number]> }>} arrows
+ */
+export function levelComplexity(size, arrows) {
+  const list = arrows ?? [];
+  let cells = 0;
+  let bendCount = 0;
+  for (const arrow of list) {
+    cells += arrow.path.length;
+    bendCount += pathBendCount(arrow.path);
+  }
+
+  const remaining = list.slice();
+  let blockedMass = 0;
+  while (remaining.length > 0) {
+    let freeAt = -1;
+    let freeCount = 0;
+    for (let i = 0; i < remaining.length; i++) {
+      if (canEscapeAmong(remaining[i], size, remaining)) {
+        freeCount += 1;
+        if (freeAt < 0) freeAt = i;
+      }
+    }
+    if (freeAt < 0) break;
+    blockedMass += remaining.length - freeCount;
+    remaining.splice(freeAt, 1);
+  }
+
+  return size * 100000 + list.length * 100 + cells * 10 + blockedMass * 4 + bendCount;
+}
