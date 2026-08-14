@@ -14,6 +14,7 @@ import {
   menuStats,
   minMovesForArrows,
   starsForClear,
+  canRetryForThreeStars,
   hasFailed,
   chancesLeft,
   emptyStarRecords,
@@ -155,6 +156,16 @@ describe("strikes and stars", () => {
     assert.equal(starsForClear(NaN, NaN), 3);
     assert.equal(starsForClear(-4, -1), 3);
     assert.equal(starsForClear(undefined, 2), 1);
+  });
+
+  it("offers a retry only when this clear earned 1 or 2 stars", () => {
+    assert.equal(canRetryForThreeStars(1), true);
+    assert.equal(canRetryForThreeStars(2), true);
+    assert.equal(canRetryForThreeStars(3), false);
+    assert.equal(canRetryForThreeStars(0), false);
+    assert.equal(canRetryForThreeStars(1.9), true);
+    assert.equal(canRetryForThreeStars(NaN), false);
+    assert.equal(canRetryForThreeStars(undefined), false);
   });
 
   it("fails after MAX_STRIKES blocked taps and clamps chances", () => {

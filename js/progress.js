@@ -88,6 +88,15 @@ export function starsForClear(minMoves, moves) {
 }
 
 /**
+ * Win splash may offer a retry when this clear earned 1 or 2 stars.
+ * @param {number} stars
+ */
+export function canRetryForThreeStars(stars) {
+  const s = Math.floor(Number(stars));
+  return s === 1 || s === 2;
+}
+
+/**
  * @param {number} strikes
  */
 export function hasFailed(strikes) {
