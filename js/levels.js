@@ -5,6 +5,7 @@ export {
   TUTORIAL,
   HAND_LEVEL_SPECS,
   levelParamsForIndex,
+  minBendsForLevelIndex,
   buildLevelForIndex,
   repairToSolvable,
   levelComplexity,
