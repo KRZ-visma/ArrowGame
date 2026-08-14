@@ -113,20 +113,40 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
 }
 
 /**
- * Fill all empty cells with single-cell arrows (random directions).
+ * Fill empty center cells with arrows (minimum length 2).
+ * Edge cells may remain empty.
  * @param {number} size
  * @param {Set<string>} occupied
  * @param {Array} placed
  * @param {() => number} rng
  */
 function fillEmptyCells(size, occupied, placed, rng) {
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
+  const margin = centerMarginForSize(size);
+  
+  for (let y = margin; y < size - margin; y++) {
+    for (let x = margin; x < size - margin; x++) {
       const key = cellKey(x, y);
       if (!occupied.has(key)) {
-        const dir = DIRS[Math.floor(rng() * 4)];
-        occupied.add(key);
-        placed.push({ dir, path: [[x, y]] });
+        let placed2Cell = false;
+        
+        const dirOptions = [...DIRS].sort(() => rng() - 0.5);
+        for (const dir of dirOptions) {
+          const [dx, dy] = DELTA_ARR[dir];
+          const nx = x + dx;
+          const ny = y + dy;
+          
+          if (nx >= 0 && ny >= 0 && nx < size && ny < size && !occupied.has(cellKey(nx, ny))) {
+            occupied.add(key);
+            occupied.add(cellKey(nx, ny));
+            placed.push({ dir, path: [[x, y], [nx, ny]] });
+            placed2Cell = true;
+            break;
+          }
+        }
+        
+        if (!placed2Cell) {
+          occupied.add(key);
+        }
       }
     }
   }
