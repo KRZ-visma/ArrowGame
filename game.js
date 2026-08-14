@@ -547,14 +547,10 @@ function updateHint() {
     elHint.textContent = "Board clear — nice work.";
     return;
   }
-  const free = state.arrows.filter((a) => a.state === "idle" && canEscape(a)).length;
-  if (free === 0) {
-    elHint.textContent = "No free arrows — undo or reset and try another order.";
-  } else if (free === 1) {
-    elHint.textContent = "One arrow can leave. Start there.";
-  } else {
-    elHint.textContent = `${free} arrows can leave right now. Tap one with a clear exit.`;
-  }
+  const stuck = !state.arrows.some((a) => a.state === "idle" && canEscape(a));
+  elHint.textContent = stuck
+    ? "Stuck? Undo or reset and try another order."
+    : "Tap an arrow to send it out — the body follows the tip like a snake.";
 }
 
 function resize() {
@@ -754,23 +750,20 @@ function drawArrow(arrow) {
     return { x: p.x + arrow.offsetX, y: p.y + arrow.offsetY };
   });
 
-  const free = arrow.state === "idle" && canEscape(arrow);
   const blockedShake = arrow.state === "shake";
   const hovering = arrow.hovered && arrow.state === "idle";
 
   let stroke = "#f2f2ec";
   if (blockedShake) stroke = "#ff5a3c";
-  else if (hovering && free) stroke = "#e8ff47";
   else if (hovering) stroke = "#ffffff";
-  else if (free) stroke = "#c8e86a";
 
   const width = Math.max(2.5, state.cell * 0.18);
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
-  if (free || hovering || arrow.state === "sliding") {
-    ctx.shadowColor = free || arrow.state === "sliding" ? "rgba(232,255,71,0.35)" : "rgba(255,255,255,0.2)";
+  if (hovering || arrow.state === "sliding") {
+    ctx.shadowColor = "rgba(255,255,255,0.2)";
     ctx.shadowBlur = hovering || arrow.state === "sliding" ? 14 : 8;
   }
 
@@ -796,7 +789,7 @@ function drawArrow(arrow) {
   const baseX = tip.x - dx * headLen * 0.05;
   const baseY = tip.y - dy * headLen * 0.05;
 
-  ctx.shadowBlur = free || hovering ? 10 : 0;
+  ctx.shadowBlur = hovering || arrow.state === "sliding" ? 10 : 0;
   ctx.beginPath();
   ctx.moveTo(apexX, apexY);
   ctx.lineTo(wingLX, wingLY);
@@ -854,7 +847,7 @@ function syncHoverBoard(bx, by) {
   const arrow = arrowAtBoardPoint(bx, by);
   if (arrow) {
     arrow.hovered = true;
-    canvas.style.cursor = canEscape(arrow) ? "pointer" : "not-allowed";
+    canvas.style.cursor = "pointer";
   } else {
     canvas.style.cursor = "default";
   }
