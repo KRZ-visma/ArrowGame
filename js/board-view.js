@@ -1,4 +1,4 @@
-/** Cover-fit board viewport: resize, zoom, pan, screen↔board mapping. */
+/** Contain-fit board viewport: resize, zoom, pan, screen↔board mapping. */
 
 import { state, VIEW_MAX_SCALE } from "./play-session.js";
 
@@ -20,7 +20,10 @@ export function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-/** Scale 1 covers the long viewport axis; zoom-out can fit the full square. */
+/**
+ * Board side uses the long viewport axis (scale 1 = cover).
+ * Minimum scale fits the full square on the short axis (contain).
+ */
 export function minViewScale() {
   if (!state.side || !state.viewW || !state.viewH) return 1;
   return Math.min(state.viewW, state.viewH) / state.side;
@@ -39,15 +42,17 @@ export function panRange(viewLen, contentLen) {
   return [viewLen - contentLen, 0];
 }
 
-export function fitCoverView() {
+/** Fit the full board square inside the stage (default on level load / restart). */
+export function fitContainView() {
   if (!state.side || !state.viewW || !state.viewH) {
     state.viewX = 0;
     state.viewY = 0;
     return;
   }
-  state.viewScale = 1;
-  state.viewX = (state.viewW - state.side) / 2;
-  state.viewY = (state.viewH - state.side) / 2;
+  state.viewScale = minViewScale();
+  const scaled = state.side * state.viewScale;
+  state.viewX = (state.viewW - scaled) / 2;
+  state.viewY = (state.viewH - scaled) / 2;
   clampView();
 }
 
@@ -64,8 +69,7 @@ export function clampView() {
 }
 
 export function resetView() {
-  state.viewScale = 1;
-  fitCoverView();
+  fitContainView();
 }
 
 /** Zoom so the board point under (sx, sy) stays fixed. */
@@ -91,7 +95,7 @@ export function resize(opts = {}) {
   ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
   state.viewW = rect.width;
   state.viewH = rect.height;
-  // Cover the long axis so portrait height is used, not letterboxed.
+  // Long-axis side keeps scale 1 as cover; default reset uses contain (min scale).
   const side = Math.max(rect.width, rect.height);
   state.side = side;
   state.pad = Math.max(14, side * 0.04);

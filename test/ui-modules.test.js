@@ -44,7 +44,7 @@ describe("UI module split", () => {
     for (const rel of UI_MODULES) {
       assert.match(sw, new RegExp(`"\\.\\/${rel.replace(/\//g, "\\/")}"`));
     }
-    assert.match(sw, /CACHE_NAME = "arrow-out-v2"/);
+    assert.match(sw, /CACHE_NAME = "arrow-out-v3"/);
   });
 
   it("AGENTS.md points pack ownership and parallel lanes at agents/", () => {

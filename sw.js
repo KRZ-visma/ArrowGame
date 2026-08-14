@@ -1,7 +1,7 @@
 /* ARROW OUT service worker — cache app shell for offline play.
    Relative URLs so GitHub Pages project sites (e.g. /ArrowGame/) stay in scope. */
 
-const CACHE_NAME = "arrow-out-v2";
+const CACHE_NAME = "arrow-out-v3";
 
 const PRECACHE = [
   "./",
