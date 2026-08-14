@@ -29,9 +29,10 @@ jobs:
 
       - name: Stage site files
         run: |
-          mkdir -p _site/js
-          cp index.html game.js .nojekyll _site/
+          mkdir -p _site/js _site/icons
+          cp index.html game.js .nojekyll manifest.webmanifest sw.js _site/
           cp js/*.js _site/js/
+          cp icons/* _site/icons/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
