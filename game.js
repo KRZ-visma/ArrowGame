@@ -518,7 +518,7 @@ body {
   font-family: var(--font-body);
   font-size: 0.78rem;
   line-height: 1;
-  color: rgba(244, 244, 240, 0.22);
+  color: rgba(244, 244, 240, 0.32);
 }
 
 .level-pip.filled {
@@ -1272,7 +1272,7 @@ function openLevels() {
     for (let s = 1; s <= 3; s++) {
       const pip = document.createElement("span");
       pip.className = s <= item.stars ? "level-pip filled" : "level-pip";
-      pip.textContent = "★";
+      pip.textContent = s <= item.stars ? "★" : "☆";
       pips.appendChild(pip);
     }
     btn.append(num, pips);
