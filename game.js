@@ -40,7 +40,7 @@ const STYLE = `:root {
   --ok: #5dffb0;
   --font-display: "Archivo Black", Impact, sans-serif;
   --font-body: "DM Sans", system-ui, sans-serif;
-  --board-max: min(92vmin, min(calc(100vw - 2rem), calc(100dvh - 6.75rem - var(--safe-top) - var(--safe-bottom))));
+  --board-max: min(98vmin, min(calc(100vw - 0.75rem), calc(100dvh - 3.85rem - var(--safe-top) - var(--safe-bottom))));
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -167,29 +167,12 @@ body {
   display: block;
 }
 
-.play-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: var(--board-max);
-  margin: 0 0 0.45rem;
-  min-height: 1.35rem;
-}
-
-.play-level {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 0.78rem;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .lives {
   display: flex;
   align-items: center;
-  gap: 0.38rem;
+  gap: 0.32rem;
+  padding: 0 0.2rem;
+  min-height: 44px;
 }
 
 .life {
@@ -209,7 +192,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem clamp(0.75rem, 3vw, 1.25rem) calc(0.75rem + var(--safe-bottom));
+  padding: 0.15rem clamp(0.35rem, 2vw, 0.75rem) calc(0.35rem + var(--safe-bottom));
+  min-height: 0;
 }
 
 .board-wrap {
@@ -628,6 +612,11 @@ function buildUI() {
         <h1 class="brand-name">ARROW OUT</h1>
       </div>
       <div class="top-actions">
+        <div class="lives" id="lives" aria-label="Chances left">
+          <span class="life" data-life="0"></span>
+          <span class="life" data-life="1"></span>
+          <span class="life" data-life="2"></span>
+        </div>
         <button type="button" class="icon-btn" id="btnMenu" title="Menu" aria-label="Menu" aria-haspopup="dialog" aria-controls="menuOverlay" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M4 7h16" />
@@ -646,14 +635,6 @@ function buildUI() {
       </div>
     </header>
     <main class="stage">
-      <div class="play-meta">
-        <p class="play-level" id="playLevel">Level 1</p>
-        <div class="lives" id="lives" aria-label="Chances left">
-          <span class="life" data-life="0"></span>
-          <span class="life" data-life="1"></span>
-          <span class="life" data-life="2"></span>
-        </div>
-      </div>
       <div class="board-wrap">
         <canvas id="board" width="720" height="720" role="img" aria-label="Arrow puzzle board"></canvas>
         <div class="board-glow" aria-hidden="true"></div>
@@ -781,7 +762,6 @@ const statArrows = document.getElementById("statArrows");
 const statChances = document.getElementById("statChances");
 const statCleared = document.getElementById("statCleared");
 const statSkips = document.getElementById("statSkips");
-const playLevel = document.getElementById("playLevel");
 const livesEl = document.getElementById("lives");
 const btnCloseMenu = document.getElementById("btnCloseMenu");
 const btnAllLevels = document.getElementById("btnAllLevels");
@@ -793,6 +773,10 @@ const levelsOverlay = document.getElementById("levelsOverlay");
 const levelGrid = document.getElementById("levelGrid");
 const btnCloseLevels = document.getElementById("btnCloseLevels");
 
+const VIEW_MIN_SCALE = 1;
+const VIEW_MAX_SCALE = 3;
+const TAP_SLOP_PX = 12;
+
 const state = {
   levelIndex: 0,
   size: 8,
@@ -801,7 +785,11 @@ const state = {
   strikes: 0,
   cell: 40,
   pad: 24,
+  side: 0,
   dpr: 1,
+  viewScale: 1,
+  viewX: 0,
+  viewY: 0,
   pointer: null,
   animating: false,
   won: false,
@@ -847,12 +835,45 @@ function saveStars() {
 }
 
 function refreshPlayHud() {
-  playLevel.textContent = `Level ${state.levelIndex + 1}`;
   const pips = livesEl.querySelectorAll(".life");
   pips.forEach((pip, i) => {
     pip.classList.toggle("spent", i < state.strikes);
   });
   livesEl.setAttribute("aria-label", `${Math.max(0, MAX_STRIKES - state.strikes)} chances left`);
+}
+
+function resetView() {
+  state.viewScale = 1;
+  state.viewX = 0;
+  state.viewY = 0;
+}
+
+function clamp(n, lo, hi) {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function clampView() {
+  const side = state.side || 0;
+  if (side <= 0) return;
+  state.viewScale = clamp(state.viewScale, VIEW_MIN_SCALE, VIEW_MAX_SCALE);
+  const scaled = side * state.viewScale;
+  const minPan = Math.min(0, side - scaled);
+  const maxPan = Math.max(0, side - scaled);
+  state.viewX = clamp(state.viewX, minPan, maxPan);
+  state.viewY = clamp(state.viewY, minPan, maxPan);
+}
+
+/** Zoom so the board point under (sx, sy) stays fixed. */
+function zoomAt(sx, sy, nextScale) {
+  const prev = state.viewScale;
+  const scale = clamp(nextScale, VIEW_MIN_SCALE, VIEW_MAX_SCALE);
+  if (prev <= 0) return;
+  const boardX = (sx - state.viewX) / prev;
+  const boardY = (sy - state.viewY) / prev;
+  state.viewScale = scale;
+  state.viewX = sx - boardX * scale;
+  state.viewY = sy - boardY * scale;
+  clampView();
 }
 
 function setEndStars(count) {
@@ -923,6 +944,7 @@ function hydrateLevel(level) {
   state.won = false;
   state.failed = false;
   hideEndOverlay();
+  resetView();
   refreshPlayHud();
   resize();
 }
@@ -975,13 +997,23 @@ function resize() {
   canvas.height = Math.round(rect.height * state.dpr);
   ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
   const side = Math.min(rect.width, rect.height);
+  state.side = side;
   state.pad = Math.max(14, side * 0.04);
   state.cell = (side - state.pad * 2) / state.size;
+  clampView();
+}
+
+function clientToScreen(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: clientX - rect.left, y: clientY - rect.top };
 }
 
 function clientToBoard(clientX, clientY) {
-  const rect = canvas.getBoundingClientRect();
-  return { x: clientX - rect.left, y: clientY - rect.top };
+  const { x: sx, y: sy } = clientToScreen(clientX, clientY);
+  return {
+    x: (sx - state.viewX) / state.viewScale,
+    y: (sy - state.viewY) / state.viewScale,
+  };
 }
 
 function distToSegment(px, py, x1, y1, x2, y2) {
@@ -1200,6 +1232,10 @@ function drawBoard() {
   ctx.fillRect(0, 0, rect.width, rect.height);
 
   ctx.save();
+  ctx.translate(state.viewX, state.viewY);
+  ctx.scale(state.viewScale, state.viewScale);
+
+  ctx.save();
   ctx.strokeStyle = "rgba(255,255,255,0.035)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= state.size; i++) {
@@ -1219,6 +1255,7 @@ function drawBoard() {
   const sliding = state.arrows.filter((a) => a.state === "sliding");
   for (const a of idle) drawArrow(a);
   for (const a of sliding) drawArrow(a);
+  ctx.restore();
 }
 
 let lastTs = performance.now();
@@ -1232,44 +1269,197 @@ function frame(ts) {
 
 function syncHoverBoard(bx, by) {
   for (const arrow of state.arrows) arrow.hovered = false;
+  if (gestureMode === "pan" || gestureMode === "pinch") {
+    canvas.style.cursor = gestureMode === "pan" ? "grabbing" : "default";
+    return;
+  }
   const arrow = arrowAtBoardPoint(bx, by);
   if (arrow) {
     arrow.hovered = true;
     canvas.style.cursor = "pointer";
   } else {
-    canvas.style.cursor = "default";
+    canvas.style.cursor = state.viewScale > 1.01 ? "grab" : "default";
   }
 }
 
+/** @type {Map<number, { x: number, y: number }>} */
+const activePointers = new Map();
+/** @type {'none' | 'pending' | 'pan' | 'pinch'} */
+let gestureMode = "none";
+let panLastX = 0;
+let panLastY = 0;
+let pinchStartDist = 0;
+let pinchStartScale = 1;
+let pinchMidX = 0;
+let pinchMidY = 0;
+
+function pointerDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function pointerMidpoint(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function beginPinch() {
+  const pts = [...activePointers.values()];
+  if (pts.length < 2) return;
+  gestureMode = "pinch";
+  pinchStartDist = Math.max(1, pointerDistance(pts[0], pts[1]));
+  pinchStartScale = state.viewScale;
+  const mid = pointerMidpoint(pts[0], pts[1]);
+  pinchMidX = mid.x;
+  pinchMidY = mid.y;
+  for (const arrow of state.arrows) arrow.hovered = false;
+  canvas.style.cursor = "default";
+}
+
+function updatePinch() {
+  const pts = [...activePointers.values()];
+  if (pts.length < 2 || pinchStartDist <= 0) return;
+  const dist = Math.max(1, pointerDistance(pts[0], pts[1]));
+  const mid = pointerMidpoint(pts[0], pts[1]);
+  const nextScale = pinchStartScale * (dist / pinchStartDist);
+  zoomAt(pinchMidX, pinchMidY, nextScale);
+  const dx = mid.x - pinchMidX;
+  const dy = mid.y - pinchMidY;
+  state.viewX += dx;
+  state.viewY += dy;
+  pinchMidX = mid.x;
+  pinchMidY = mid.y;
+  clampView();
+}
+
 canvas.addEventListener("pointermove", (e) => {
+  if (activePointers.has(e.pointerId)) {
+    activePointers.set(e.pointerId, clientToScreen(e.clientX, e.clientY));
+  }
+
+  if (gestureMode === "pinch") {
+    e.preventDefault();
+    updatePinch();
+    return;
+  }
+
+  if (gestureMode === "pending" || gestureMode === "pan") {
+    const screen = activePointers.get(e.pointerId);
+    if (!screen) return;
+    e.preventDefault();
+    if (gestureMode === "pending") {
+      const dx = screen.x - panLastX;
+      const dy = screen.y - panLastY;
+      if (Math.hypot(dx, dy) >= TAP_SLOP_PX) {
+        if (state.viewScale > 1.01) {
+          gestureMode = "pan";
+          panLastX = screen.x;
+          panLastY = screen.y;
+          for (const arrow of state.arrows) arrow.hovered = false;
+          canvas.style.cursor = "grabbing";
+        } else {
+          gestureMode = "none";
+        }
+      }
+    }
+    if (gestureMode === "pan") {
+      const dx = screen.x - panLastX;
+      const dy = screen.y - panLastY;
+      panLastX = screen.x;
+      panLastY = screen.y;
+      state.viewX += dx;
+      state.viewY += dy;
+      clampView();
+    }
+    return;
+  }
+
   const { x, y } = clientToBoard(e.clientX, e.clientY);
   state.pointer = { x, y };
   syncHoverBoard(x, y);
 });
 
 canvas.addEventListener("pointerleave", () => {
+  if (gestureMode !== "none") return;
   state.pointer = null;
   syncHoverBoard(-1, -1);
 });
 
 canvas.addEventListener("pointerdown", (e) => {
-  if (e.button !== 0) return;
+  if (e.button !== 0 && e.pointerType === "mouse") return;
   e.preventDefault();
-  if (state.won || state.failed) return;
+  const screen = clientToScreen(e.clientX, e.clientY);
+  activePointers.set(e.pointerId, screen);
   if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
-  const { x, y } = clientToBoard(e.clientX, e.clientY);
-  const arrow = arrowAtBoardPoint(x, y);
-  if (!arrow) return;
-  tryMove(arrow);
+
+  if (activePointers.size >= 2) {
+    beginPinch();
+    return;
+  }
+
+  if (state.won || state.failed) {
+    gestureMode = "none";
+    return;
+  }
+
+  gestureMode = "pending";
+  panLastX = screen.x;
+  panLastY = screen.y;
 });
 
-canvas.addEventListener("pointerup", (e) => {
+function endPointer(e) {
+  const wasPending = gestureMode === "pending" && activePointers.size === 1;
+  const screen = activePointers.get(e.pointerId);
+  activePointers.delete(e.pointerId);
   if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
-});
 
-canvas.addEventListener("pointercancel", (e) => {
-  if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
-});
+  if (gestureMode === "pinch") {
+    if (activePointers.size >= 2) {
+      beginPinch();
+      return;
+    }
+    if (activePointers.size === 1) {
+      const remaining = [...activePointers.values()][0];
+      gestureMode = state.viewScale > 1.01 ? "pan" : "none";
+      panLastX = remaining.x;
+      panLastY = remaining.y;
+      return;
+    }
+    gestureMode = "none";
+    return;
+  }
+
+  if (gestureMode === "pan") {
+    if (activePointers.size === 0) gestureMode = "none";
+    return;
+  }
+
+  if (wasPending && screen && !state.won && !state.failed) {
+    gestureMode = "none";
+    const board = {
+      x: (screen.x - state.viewX) / state.viewScale,
+      y: (screen.y - state.viewY) / state.viewScale,
+    };
+    const arrow = arrowAtBoardPoint(board.x, board.y);
+    if (arrow) tryMove(arrow);
+    syncHoverBoard(board.x, board.y);
+    return;
+  }
+
+  gestureMode = "none";
+}
+
+canvas.addEventListener("pointerup", endPointer);
+canvas.addEventListener("pointercancel", endPointer);
+
+canvas.addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    const { x, y } = clientToScreen(e.clientX, e.clientY);
+    const factor = Math.exp(-e.deltaY * 0.0018);
+    zoomAt(x, y, state.viewScale * factor);
+  },
+  { passive: false },
+);
 
 btnReset.addEventListener("click", () => startLevel(state.levelIndex));
 
