@@ -508,14 +508,19 @@ body {
 
 .level-pips {
   display: flex;
-  gap: 0.15rem;
+  gap: 0.18rem;
 }
 
 .level-pip {
-  width: 0.38rem;
-  height: 0.38rem;
-  background: rgba(244, 244, 240, 0.16);
+  flex-shrink: 0;
+  width: 0.58rem;
+  height: 0.58rem;
+  background: rgba(244, 244, 240, 0.2);
   clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.level-pip.filled {
+  background: var(--accent);
 }
 
 .overlay-card-levels .menu-actions {
@@ -659,7 +664,7 @@ function buildUI() {
       <div class="overlay-card overlay-card-levels" id="levelsDialog" role="dialog" aria-modal="true" aria-labelledby="levelsTitle">
         <p class="overlay-kicker">Select</p>
         <h2 class="overlay-title" id="levelsTitle">All levels</h2>
-        <p class="level-legend">Unlocked levels you have not cleared yet are outlined. Locked levels wait until you finish the one before.</p>
+        <p class="level-legend">Filled stars are your best clear. Unlocked levels you have not cleared yet are outlined. Locked levels wait until you finish the one before.</p>
         <div class="level-grid" id="levelGrid"></div>
         <div class="menu-actions">
           <button type="button" class="btn" id="btnCloseLevels">Close</button>

@@ -38,6 +38,7 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
 - **Reset vs Menu** — the toolbar Reset button restarts the **current** level only (and the fail splash Reset does the same). Level number, stats, All levels, and “start over from zero” live in the Menu overlay (`btnMenu`). Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into Reset
 - **End splash** — win and fail share one overlay. Win shows stars + the next level number and requires **Next**. Fail tells the player they did not complete the level and requires **Reset**. Do not auto-advance
+- **All levels** — each cell shows three `.level-pip` stars; earned ones need `.level-pip.filled` (accent). That rule is separate from `.star.filled` on the win splash — without it, 1/2/3 looks the same as uncleared
 
 ## Workflow
 
