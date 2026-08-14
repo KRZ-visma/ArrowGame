@@ -20,7 +20,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
 | Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD, pointer/keyboard |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy — **unit tests** |
-| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; generator places arrow tails in the center zone (`buildSolvableLevel`) — **unit tests** |
+| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places multi-cell puzzle arrows (tails in center zone) then fills all empty cells with single-cell arrows via `fillEmptyCells`; TUTORIAL is built via `buildTutorial()` for consistency — **unit tests** |
 | Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
@@ -52,7 +52,7 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 
 1. Small, focused diffs — only what the task asks; **one feature ≈ one domain module** when possible
 2. Changes to level generation, escape rules, undo, or progress → add or update **unit tests** (not Playwright/UI tests). Use `npm test` (Node’s built-in runner) so pure logic imports without a browser
-3. Before merge: unit tests must **pass** locally; the unit-test workflow must be green
+3. Before merge: unit tests must **pass** locally; the unit-test workflow must be green. When testing board coverage, check occupied cells (via Set size) not arrow count, since arrows can be multi-cell
 4. UI / canvas / controls changes: verify on **iPhone 16 Pro**-sized viewport (≈ 393×852, DPR 3) — layout, touch, safe areas; note briefly in the PR that this was checked
 5. Do not add secrets, analytics, or external APIs without asking
 6. Commits/PRs short and clear; UI copy always English
