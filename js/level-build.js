@@ -523,7 +523,105 @@ function buildTutorial() {
 
 export const TUTORIAL = buildTutorial();
 
-/** Seed/size/count for the first curated pack (levels 2–12). */
+/**
+ * 90-degree turns along a snake (length-1/2 arrows contribute 0).
+ * @param {Array<[number, number] | { x: number, y: number }>} path
+ */
+function countBends(path) {
+  if (path.length < 3) return 0;
+  let n = 0;
+  for (let i = 1; i < path.length - 1; i += 1) {
+    const a = path[i - 1];
+    const b = path[i];
+    const c = path[i + 1];
+    const ax = Array.isArray(a) ? a[0] : a.x;
+    const ay = Array.isArray(a) ? a[1] : a.y;
+    const bx = Array.isArray(b) ? b[0] : b.x;
+    const by = Array.isArray(b) ? b[1] : b.y;
+    const cx = Array.isArray(c) ? c[0] : c.x;
+    const cy = Array.isArray(c) ? c[1] : c.y;
+    if (bx - ax !== cx - bx || by - ay !== cy - by) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Simultaneous-free clearance layers (all currently free arrows leave together).
+ * @param {number} size
+ * @param {Array<{ dir: string, path: Array }>} arrows
+ */
+function clearanceProfile(size, arrows) {
+  let remaining = arrows.slice();
+  let waves = 0;
+  let blocked0 = 0;
+  let depthSum = 0;
+  let first = true;
+  while (remaining.length > 0) {
+    const free = remaining.filter((arrow) => canEscapeAmong(arrow, size, remaining));
+    if (first) {
+      blocked0 = remaining.length - free.length;
+      first = false;
+    }
+    if (free.length === 0) break;
+    waves += 1;
+    depthSum += free.length * waves;
+    const freeSet = new Set(free);
+    remaining = remaining.filter((arrow) => !freeSet.has(arrow));
+  }
+  return { waves, blocked0, depthSum };
+}
+
+/**
+ * Integer difficulty score. Board area dominates; blocked arrows, clearance
+ * waves, occupancy, and winding snakes break ties so the pack can be ordered.
+ *
+ * @param {{ size: number, arrows: Array<{ dir: string, path: Array }> }} level
+ */
+export function levelComplexity(level) {
+  const arrows = level.arrows ?? [];
+  if (arrows.length === 0) return 0;
+  const { size } = level;
+  let cells = 0;
+  let bends = 0;
+  for (const arrow of arrows) {
+    cells += arrow.path.length;
+    bends += countBends(arrow.path);
+  }
+  const profile = clearanceProfile(size, arrows);
+  return (
+    size * size * 50 +
+    arrows.length * 20 +
+    profile.blocked0 * 15 +
+    profile.waves * 25 +
+    profile.depthSum * 2 +
+    cells * 3 +
+    bends * 8
+  );
+}
+
+/**
+ * Pin the tutorial first, then sort the rest by nondecreasing `levelComplexity`.
+ * Equal scores keep input order.
+ *
+ * @param {Array<{ size: number, arrows: Array }>} levels
+ */
+export function orderLevelsByComplexity(levels) {
+  const pinned = [];
+  const rest = [];
+  for (const level of levels) {
+    if (level === TUTORIAL) pinned.push(level);
+    else rest.push(level);
+  }
+  const keyed = rest.map((level, i) => ({
+    level,
+    i,
+    score: levelComplexity(level),
+  }));
+  keyed.sort((a, b) => a.score - b.score || a.i - b.i);
+  return pinned.concat(keyed.map((row) => row.level));
+}
+
+/** Seed/size/count for curated early boards (then the size/count curve continues). */
 export const HAND_LEVEL_SPECS = [
   { seed: 42, size: 7, count: 8 },
   { seed: 77, size: 8, count: 11 },
@@ -540,17 +638,21 @@ export const HAND_LEVEL_SPECS = [
 
 /**
  * Difficulty parameters for a level index (used by the level generator script).
+ * Size and snake-count never drop after the tutorial — the curve continues from
+ * the last hand spec instead of resetting to an 8×8.
+ *
  * @param {number} levelIndex
  */
 export function levelParamsForIndex(levelIndex) {
-  const handCount = 1 + HAND_LEVEL_SPECS.length;
-  if (levelIndex < handCount) {
-    if (levelIndex === 0) return { tutorial: true };
+  if (levelIndex <= 0) return { tutorial: true };
+  if (levelIndex <= HAND_LEVEL_SPECS.length) {
     const spec = HAND_LEVEL_SPECS[levelIndex - 1];
     return { seed: spec.seed, size: spec.size, count: spec.count };
   }
-  const size = Math.min(8 + Math.floor((levelIndex - handCount) / 2), 16);
-  const count = Math.min(8 + levelIndex, Math.floor(size * size * 0.32));
+  const last = HAND_LEVEL_SPECS[HAND_LEVEL_SPECS.length - 1];
+  const extra = levelIndex - HAND_LEVEL_SPECS.length;
+  const size = Math.min(16, last.size + Math.floor((extra - 1) / 4));
+  const count = last.count + extra;
   return { seed: 1000 + levelIndex * 17, size, count };
 }
 

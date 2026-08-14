@@ -10,6 +10,10 @@ import {
   rngFrom,
   buildLevelForIndex,
   repairToSolvable,
+  levelParamsForIndex,
+  levelComplexity,
+  orderLevelsByComplexity,
+  HAND_LEVEL_SPECS,
 } from "../js/levels.js";
 import {
   isCenterCell,
@@ -189,9 +193,52 @@ describe("level generation", () => {
     assert.deepEqual(getLevelData(-3), LEVEL_PACK[0]);
   });
 
-  it("matches the generator output for sampled indices", () => {
-    for (const index of [0, 1, 11, 12, 50, 99]) {
-      assert.deepEqual(LEVEL_PACK[index], buildLevelForIndex(index));
+  it("keeps size and snake-count nondecreasing after the tutorial", () => {
+    let prevSize = 6;
+    let prevCount = 0;
+    for (let i = 1; i < 100; i += 1) {
+      const params = levelParamsForIndex(i);
+      assert.equal(params.tutorial, undefined);
+      assert.ok(
+        params.size >= prevSize,
+        `size dropped at index ${i}: ${params.size} < ${prevSize}`,
+      );
+      assert.ok(
+        params.count >= prevCount,
+        `count dropped at index ${i}: ${params.count} < ${prevCount}`,
+      );
+      prevSize = params.size;
+      prevCount = params.count;
+    }
+    assert.deepEqual(levelParamsForIndex(0), { tutorial: true });
+    assert.deepEqual(levelParamsForIndex(-1), { tutorial: true });
+    const afterHand = levelParamsForIndex(HAND_LEVEL_SPECS.length + 1);
+    const lastHand = levelParamsForIndex(HAND_LEVEL_SPECS.length);
+    assert.ok(afterHand.size >= lastHand.size);
+    assert.ok(afterHand.count >= lastHand.count);
+  });
+
+  it("keeps the tutorial as pack level 1 and generates later indices deterministically", () => {
+    assert.deepEqual(LEVEL_PACK[0], TUTORIAL);
+    assert.deepEqual(buildLevelForIndex(0), TUTORIAL);
+    for (const index of [1, 11, 12, 50, 99]) {
+      const a = buildLevelForIndex(index);
+      const b = buildLevelForIndex(index);
+      assert.deepEqual(a, b);
+      assert.equal(isSolvable(a.size, a.arrows), true);
+    }
+  });
+
+  it("orders the baked pack by nondecreasing complexity", () => {
+    assert.deepEqual(LEVEL_PACK[0], TUTORIAL);
+    let prev = -Infinity;
+    for (let i = 0; i < LEVEL_PACK.length; i += 1) {
+      const score = levelComplexity(LEVEL_PACK[i]);
+      assert.ok(
+        score >= prev,
+        `level ${i + 1} complexity ${score} is below level ${i} (${prev})`,
+      );
+      prev = score;
     }
   });
 
@@ -363,5 +410,97 @@ describe("repairToSolvable", () => {
     assert.equal(isSolvable(level.size, level.arrows), false);
     assert.equal(repairToSolvable(level), true);
     assert.equal(isSolvable(level.size, level.arrows), true);
+  });
+});
+
+describe("levelComplexity", () => {
+  it("scores an empty board as 0", () => {
+    assert.equal(levelComplexity({ size: 8, arrows: [] }), 0);
+    assert.equal(levelComplexity({ size: 8 }), 0);
+  });
+
+  it("rates a larger blocked board above a tiny clear one", () => {
+    const easy = {
+      size: 4,
+      arrows: [{ dir: "E", path: [[0, 0]] }],
+    };
+    const harder = {
+      size: 8,
+      arrows: [
+        { dir: "E", path: [[0, 0], [1, 0], [2, 0]] },
+        { dir: "W", path: [[7, 0], [6, 0]] },
+      ],
+    };
+    assert.ok(levelComplexity(harder) > levelComplexity(easy));
+    assert.ok(levelComplexity(TUTORIAL) > levelComplexity(easy));
+  });
+
+  it("counts object-cell bends the same as tuple paths", () => {
+    const tuples = {
+      size: 5,
+      arrows: [{ dir: "E", path: [[1, 1], [2, 1], [2, 2]] }],
+    };
+    const objects = {
+      size: 5,
+      arrows: [
+        {
+          dir: "E",
+          path: [
+            { x: 1, y: 1 },
+            { x: 2, y: 1 },
+            { x: 2, y: 2 },
+          ],
+        },
+      ],
+    };
+    assert.equal(levelComplexity(tuples), levelComplexity(objects));
+    const straight = {
+      size: 5,
+      arrows: [{ dir: "E", path: [[0, 0], [1, 0], [2, 0]] }],
+    };
+    assert.ok(levelComplexity(tuples) > levelComplexity(straight));
+  });
+
+  it("still returns a finite score when greedy clear cannot finish", () => {
+    const stuck = {
+      size: 4,
+      arrows: [
+        { dir: "E", path: [[0, 0], [1, 1]] },
+        { dir: "W", path: [[3, 0], [2, 1]] },
+      ],
+    };
+    assert.equal(isSolvable(stuck.size, stuck.arrows), false);
+    const score = levelComplexity(stuck);
+    assert.ok(Number.isFinite(score));
+    assert.ok(score > 0);
+  });
+});
+
+describe("orderLevelsByComplexity", () => {
+  it("pins the tutorial first and sorts the rest by score", () => {
+    const easy = { size: 3, arrows: [{ dir: "N", path: [[1, 1]] }] };
+    const hard = {
+      size: 10,
+      arrows: [
+        { dir: "E", path: [[0, 0], [1, 0]] },
+        { dir: "S", path: [[2, 0], [2, 1], [2, 2]] },
+      ],
+    };
+    const ordered = orderLevelsByComplexity([hard, TUTORIAL, easy]);
+    assert.equal(ordered[0], TUTORIAL);
+    assert.equal(ordered[1], easy);
+    assert.equal(ordered[2], hard);
+  });
+
+  it("keeps equal-score input order and copies the array", () => {
+    const a = { size: 4, arrows: [{ dir: "E", path: [[0, 0]] }] };
+    const b = { size: 4, arrows: [{ dir: "E", path: [[0, 0]] }] };
+    const input = [a, b];
+    const ordered = orderLevelsByComplexity(input);
+    assert.equal(ordered[0], a);
+    assert.equal(ordered[1], b);
+    assert.notEqual(ordered, input);
+    assert.deepEqual(orderLevelsByComplexity([]), []);
+    assert.deepEqual(orderLevelsByComplexity([a]), [a]);
   });
 });
