@@ -34,4 +34,4 @@ npm test
 
 ## Controls
 
-Click / tap · Menu · Reset · Skip · `Ctrl/Cmd+Z` · `R`
+Click / tap · Menu · Restart · Skip · `Ctrl/Cmd+Z` · `R`
