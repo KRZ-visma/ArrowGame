@@ -25,7 +25,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | PWA | `manifest.webmanifest`, `sw.js`, `icons/*` | Lane: `agents/pwa.md` — **unit tests** (`test/pwa.test.js`) |
 | Play orchestration | `game.js` | Level load, moves/strikes/win-fail, wires UI modules |
 | UI shell / CSS | `js/ui-shell.js` | Injected CSS + DOM shell — lane: `agents/ui.md` |
-| Board view | `js/board-view.js` | Cover-fit, zoom/pan, resize, screen↔board — lane: `agents/ui.md` |
+| Board view | `js/board-view.js` | Contain-fit default, zoom/pan, resize, screen↔board — lane: `agents/ui.md` |
 | Board draw | `js/board-draw.js` | Arrow/board paint + hit-test — lane: `agents/ui.md` |
 | Overlays | `js/overlays.js` | End splash, Menu, All levels — lane: `agents/ui.md` |
 | Pointer input | `js/pointer-input.js` | Pinch/pan/tap — lane: `agents/ui.md` |
