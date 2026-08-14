@@ -168,7 +168,7 @@ body {
   height: 100%;
   border-radius: 4px;
   cursor: pointer;
-  touch-action: manipulation;
+  touch-action: none;
   background: #000;
   box-shadow:
     0 0 0 1px var(--line),
@@ -593,38 +593,81 @@ function undo() {
   updateHint();
 }
 
-function pointerToCell(clientX, clientY) {
+function clientToBoard(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
-  const gx = Math.floor((x - state.pad) / state.cell);
-  const gy = Math.floor((y - state.pad) / state.cell);
-  if (gx < 0 || gy < 0 || gx >= state.size || gy >= state.size) return null;
-  return { x: gx, y: gy };
+  return { x: clientX - rect.left, y: clientY - rect.top };
 }
 
-function arrowAt(cell) {
+function distToSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function arrowPathPoints(arrow) {
+  const pathCells =
+    arrow.state === "sliding"
+      ? snakePositions(arrow.path, arrow.dir, arrow.slideDistance)
+      : arrow.path;
+  return pathCells.map((c) => {
+    const p = cellCenter(c.x, c.y);
+    return { x: p.x + arrow.offsetX, y: p.y + arrow.offsetY };
+  });
+}
+
+function arrowAtBoardPoint(bx, by) {
+  const hitSlop = Math.max(16, state.cell * 0.44);
+  let best = null;
+  let bestDist = hitSlop;
   for (const arrow of state.arrows) {
     if (arrow.state === "gone" || arrow.state === "sliding") continue;
-    if (arrow.path.some((p) => p.x === cell.x && p.y === cell.y)) return arrow;
+    const pts = arrowPathPoints(arrow);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const d = distToSegment(bx, by, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = arrow;
+      }
+    }
+    if (pts.length) {
+      const tip = pts[pts.length - 1];
+      const { x: dx, y: dy } = DELTA[arrow.dir];
+      const headLen = state.cell * 0.42;
+      const apexX = tip.x + dx * headLen * 0.55;
+      const apexY = tip.y + dy * headLen * 0.55;
+      const dTip = Math.hypot(bx - apexX, by - apexY);
+      if (dTip < bestDist) {
+        bestDist = dTip;
+        best = arrow;
+      }
+    }
   }
-  return null;
+  return best;
+}
+
+function syncAnimating() {
+  state.animating = state.arrows.some((a) => a.state === "sliding" || a.state === "shake");
 }
 
 function tryMove(arrow) {
-  if (state.animating || arrow.state !== "idle") return;
+  if (arrow.state !== "idle") return;
 
   if (!canEscape(arrow)) {
     arrow.state = "shake";
     arrow.animT = 0;
     arrow.shakePhase = Math.random() * Math.PI * 2;
+    syncAnimating();
     return;
   }
 
   pushHistory();
   state.moves += 1;
-  state.animating = true;
   arrow.state = "sliding";
+  syncAnimating();
   arrow.animT = 0;
   arrow.offsetX = 0;
   arrow.offsetY = 0;
@@ -640,6 +683,7 @@ function updateArrow(arrow, dt) {
       arrow.animT = 0;
       arrow.offsetX = 0;
       arrow.offsetY = 0;
+      syncAnimating();
     } else {
       const damp = 1 - arrow.animT / 0.42;
       const amp = state.cell * 0.12 * damp;
@@ -665,7 +709,7 @@ function updateArrow(arrow, dt) {
       arrow.slideDistance = 0;
       arrow.offsetX = 0;
       arrow.offsetY = 0;
-      state.animating = state.arrows.some((a) => a.state === "sliding" || a.state === "shake");
+      syncAnimating();
       updateHud();
       updateHint();
       checkWin();
@@ -798,13 +842,9 @@ function frame(ts) {
   requestAnimationFrame(frame);
 }
 
-function syncHover(cell) {
+function syncHoverBoard(bx, by) {
   for (const arrow of state.arrows) arrow.hovered = false;
-  if (!cell) {
-    canvas.style.cursor = "default";
-    return;
-  }
-  const arrow = arrowAt(cell);
+  const arrow = arrowAtBoardPoint(bx, by);
   if (arrow) {
     arrow.hovered = true;
     canvas.style.cursor = "pointer";
@@ -814,22 +854,32 @@ function syncHover(cell) {
 }
 
 canvas.addEventListener("pointermove", (e) => {
-  const cell = pointerToCell(e.clientX, e.clientY);
-  state.pointer = cell;
-  syncHover(cell);
+  const { x, y } = clientToBoard(e.clientX, e.clientY);
+  state.pointer = { x, y };
+  syncHoverBoard(x, y);
 });
 
 canvas.addEventListener("pointerleave", () => {
   state.pointer = null;
-  syncHover(null);
+  syncHoverBoard(-1, -1);
 });
 
 canvas.addEventListener("pointerdown", (e) => {
-  const cell = pointerToCell(e.clientX, e.clientY);
-  if (!cell) return;
-  const arrow = arrowAt(cell);
+  if (e.button !== 0) return;
+  e.preventDefault();
+  if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+  const { x, y } = clientToBoard(e.clientX, e.clientY);
+  const arrow = arrowAtBoardPoint(x, y);
   if (!arrow) return;
   tryMove(arrow);
+});
+
+canvas.addEventListener("pointerup", (e) => {
+  if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+});
+
+canvas.addEventListener("pointercancel", (e) => {
+  if (canvas.hasPointerCapture?.(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
 });
 
 btnUndo.addEventListener("click", () => undo());
@@ -849,6 +899,9 @@ window.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("resize", () => resize());
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => resize());
+}
 
 loadProgress();
 startLevel(state.levelIndex);
