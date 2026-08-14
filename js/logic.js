@@ -97,6 +97,28 @@ export function pathHasReversal(path) {
 }
 
 /**
+ * Unit heading of the painted tip: along the last body segment, or `fallbackDir`
+ * when the path is a single cell (or a zero-length step).
+ *
+ * @param {Array<Cell | [number, number]>} path
+ * @param {Dir} fallbackDir
+ * @returns {Cell}
+ */
+export function headingDelta(path, fallbackDir) {
+  const cells = normalizePath(path);
+  if (cells.length >= 2) {
+    const a = cells[cells.length - 2];
+    const b = cells[cells.length - 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy);
+    if (len > 1e-6) return { x: dx / len, y: dy / len };
+  }
+  const d = DELTA[fallbackDir] || DELTA.E;
+  return { x: d.x, y: d.y };
+}
+
+/**
  * @param {number} x
  * @param {number} y
  */

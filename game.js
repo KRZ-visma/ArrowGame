@@ -1,5 +1,6 @@
 import {
   DELTA,
+  headingDelta,
   canEscape as canEscapeArrow,
   snakePositions,
   snakeExitDistance,
@@ -1008,7 +1009,7 @@ function arrowAtBoardPoint(bx, by) {
     }
     if (pts.length) {
       const tip = pts[pts.length - 1];
-      const { x: dx, y: dy } = DELTA[arrow.dir];
+      const { x: dx, y: dy } = headingDelta(arrow.path, arrow.dir);
       const headLen = state.cell * 0.42;
       const apexX = tip.x + dx * headLen * 0.55;
       const apexY = tip.y + dy * headLen * 0.55;
@@ -1152,7 +1153,7 @@ function drawArrow(arrow) {
   ctx.stroke();
 
   const tip = pts[pts.length - 1];
-  const { x: dx, y: dy } = DELTA[arrow.dir];
+  const { x: dx, y: dy } = headingDelta(pathCells, arrow.dir);
   const headLen = state.cell * 0.42;
   const headWidth = state.cell * 0.34;
   const apexX = tip.x + dx * headLen * 0.55;

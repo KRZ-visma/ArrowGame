@@ -15,8 +15,9 @@ import {
   isCenterCell,
   chooseArrowShape,
   growWindingPath,
+  pickSlideDir,
 } from "../js/level-build.js";
-import { canEscapePath, cellKey, isSolvable, stuckArrows, countPathTurns, pathHasReversal, dirBetween } from "../js/logic.js";
+import { canEscapePath, cellKey, isSolvable, countPathTurns, pathHasReversal, dirBetween } from "../js/logic.js";
 
 describe("chooseArrowShape / growWindingPath", () => {
   it("picks curl, U-turn, bent, or straight from the roll and budget", () => {
@@ -29,7 +30,7 @@ describe("chooseArrowShape / growWindingPath", () => {
     assert.equal(chooseArrowShape(() => 0, 2), "straight");
   });
 
-  it("grows a U-turn that reverses and still ends in the exit dir", () => {
+  it("grows a U-turn that reverses", () => {
     const path = growWindingPath([5, 5], "E", 12, new Set(), rngFrom(3), "uturn");
     assert.ok(path);
     assert.ok(path.length >= 4);
@@ -112,6 +113,55 @@ describe("chooseArrowShape / growWindingPath", () => {
     assert.ok(path);
     assert.ok(path.length >= 2);
     assert.equal(dirBetween(path[path.length - 2], path[path.length - 1]), "E");
+  });
+});
+
+describe("pickSlideDir", () => {
+  it("prefers a crawl dir that does not match the painted tip", () => {
+    const path = [
+      [2, 2],
+      [3, 2],
+      [4, 2],
+    ];
+    const dir = pickSlideDir(path, 8, new Set(), () => 0);
+    assert.ok(dir);
+    assert.notEqual(dir, "E");
+    assert.equal(canEscapePath(path, dir, 8, new Set()), true);
+  });
+
+  it("can keep the tip-aligned crawl dir", () => {
+    const path = [
+      [2, 2],
+      [3, 2],
+      [4, 2],
+    ];
+    const dir = pickSlideDir(path, 8, new Set(), () => 0.9);
+    assert.equal(dir, "E");
+  });
+
+  it("returns null when every crawl dir is blocked", () => {
+    const path = [
+      [3, 3],
+      [3, 2],
+      [3, 1],
+      [2, 1],
+      [1, 1],
+      [1, 2],
+      [2, 2],
+    ];
+    const occupied = new Set();
+    for (let y = 0; y < 5; y += 1) {
+      for (let x = 0; x < 5; x += 1) {
+        if (!path.some(([px, py]) => px === x && py === y)) occupied.add(cellKey(x, y));
+      }
+    }
+    assert.equal(pickSlideDir(path, 5, occupied, rngFrom(1)), null);
+  });
+
+  it("treats a length-1 path as having no tip segment", () => {
+    const dir = pickSlideDir([[2, 2]], 6, new Set(), rngFrom(4));
+    assert.ok(dir);
+    assert.equal(canEscapePath([[2, 2]], dir, 6, new Set()), true);
   });
 });
 
@@ -236,6 +286,22 @@ describe("level generation", () => {
     assert.ok(multi >= 8, `expected multi-turn arrows, got ${multi}`);
   });
 
+  it("often crawls in a direction other than the painted tip", () => {
+    let mismatched = 0;
+    let multiCell = 0;
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const level = buildSolvableLevel(12, 18, rngFrom(seed * 19));
+      for (const arrow of level.arrows) {
+        if (arrow.path.length < 2) continue;
+        multiCell += 1;
+        const tip = dirBetween(arrow.path[arrow.path.length - 2], arrow.path[arrow.path.length - 1]);
+        if (tip && tip !== arrow.dir) mismatched += 1;
+      }
+    }
+    assert.ok(multiCell > 0);
+    assert.ok(mismatched >= 20, `expected mismatched tip vs crawl, got ${mismatched}`);
+  });
+
   it("every pack level is solvable", () => {
     assert.ok(LEVEL_PACK.length > 0);
     for (let i = 0; i < LEVEL_PACK.length; i += 1) {
@@ -263,6 +329,15 @@ describe("level generation", () => {
     assert.ok(bent >= 40, `expected bent arrows in the pack, got ${bent}`);
     assert.ok(reversals >= 10, `expected reversing arrows in the pack, got ${reversals}`);
     assert.ok(multi >= 10, `expected multi-turn arrows in the pack, got ${multi}`);
+    let mismatched = 0;
+    for (const level of LEVEL_PACK) {
+      for (const arrow of level.arrows) {
+        if (arrow.path.length < 2) continue;
+        const tip = dirBetween(arrow.path[arrow.path.length - 2], arrow.path[arrow.path.length - 1]);
+        if (tip && tip !== arrow.dir) mismatched += 1;
+      }
+    }
+    assert.ok(mismatched >= 40, `expected pack arrows whose tip ≠ crawl dir, got ${mismatched}`);
   });
 });
 
@@ -291,6 +366,25 @@ describe("repairToSolvable", () => {
       level.arrows.map((a) => a.path),
       [[[5, 5]], [[5, 7]]],
     );
+  });
+
+  it("flips a multi-cell crawl dir without reversing the body", () => {
+    const path = [
+      [2, 2],
+      [3, 2],
+    ];
+    const level = {
+      size: 8,
+      arrows: [
+        { dir: "E", path },
+        { dir: "W", path: [[5, 2]] },
+      ],
+    };
+    assert.equal(isSolvable(level.size, level.arrows), false);
+    assert.equal(repairToSolvable(level), true);
+    assert.equal(isSolvable(level.size, level.arrows), true);
+    assert.deepEqual(level.arrows[0].path, path);
+    assert.notEqual(level.arrows[0].dir, "E");
   });
 
   it("reverses a head-to-head pair on a file", () => {
@@ -323,17 +417,21 @@ describe("repairToSolvable", () => {
     assert.equal(isSolvable(level.size, level.arrows), true);
   });
 
-  it("returns false when leftover arrows cannot be reoriented", () => {
+  it("does not reverse a non-orthogonal snake", () => {
     const level = {
-      size: 4,
+      size: 6,
       arrows: [
-        { dir: "E", path: [[0, 0], [1, 1]] },
-        { dir: "W", path: [[3, 0], [2, 1]] },
+        { dir: "E", path: [[2, 2], [3, 3]] },
+        { dir: "S", path: [[3, 2]] },
+        { dir: "W", path: [[4, 3]] },
+        { dir: "N", path: [[3, 4]] },
+        { dir: "E", path: [[2, 3]] },
       ],
     };
+    const path = level.arrows[0].path;
     assert.equal(isSolvable(level.size, level.arrows), false);
-    assert.equal(repairToSolvable(level), false);
-    assert.equal(stuckArrows(level.size, level.arrows).length, 2);
+    assert.equal(repairToSolvable(level), true);
+    assert.deepEqual(level.arrows[0].path, path);
   });
 
   it("skips a length-1 whose every dir is blocked, then frees a neighbor", () => {
