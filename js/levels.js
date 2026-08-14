@@ -8,8 +8,8 @@ import {
 
 /**
  * Build a solvable level by placing arrows in reverse clear order:
- * each new arrow is slid in from off-board along its tip direction onto empty cells.
- * Clearing in reverse of placement order is always possible.
+ * each new arrow crawls in from off-board along its tip direction onto empty cells.
+ * Clearing in reverse of placement order is always possible (snake-follow exit).
  *
  * @param {number} size
  * @param {number} count

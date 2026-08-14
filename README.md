@@ -1,6 +1,6 @@
 # ARROW OUT
 
-Vanilla JavaScript arrow-escape puzzle. Click an arrow to slide it off the board in its tip direction — only when nothing blocks the path.
+Vanilla JavaScript arrow-escape puzzle. Click an arrow to send it off the board in its tip direction — the body follows like a snake, only when nothing blocks the path.
 
 ## Play on GitHub Pages
 

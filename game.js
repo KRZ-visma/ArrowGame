@@ -1,4 +1,9 @@
-import { DELTA, canEscape as canEscapeArrow } from "./js/logic.js";
+import {
+  DELTA,
+  canEscape as canEscapeArrow,
+  snakePositions,
+  snakeExitDistance,
+} from "./js/logic.js";
 import { getLevelData } from "./js/levels.js";
 import {
   STORAGE_KEY,
@@ -410,7 +415,7 @@ function buildUI() {
     </header>
     <main class="stage">
       <p class="hint" id="hint">
-        Tap an arrow to send it flying — only if nothing blocks its path.
+        Tap an arrow to send it out — the body follows the tip like a snake.
       </p>
       <div class="board-wrap">
         <canvas id="board" width="720" height="720" role="img" aria-label="Arrow puzzle board"></canvas>
@@ -442,6 +447,7 @@ buildUI();
  * @property {import('./js/logic.js').Cell[]} path
  * @property {number} offsetX
  * @property {number} offsetY
+ * @property {number} slideDistance
  * @property {'idle'|'shake'|'sliding'|'gone'} state
  * @property {number} animT
  * @property {number} shakePhase
@@ -502,6 +508,7 @@ function hydrateLevel(level) {
     path: a.path.map((p) => (Array.isArray(p) ? { x: p[0], y: p[1] } : { x: p.x, y: p.y })),
     offsetX: 0,
     offsetY: 0,
+    slideDistance: 0,
     state: "idle",
     animT: 0,
     shakePhase: 0,
@@ -577,6 +584,7 @@ function undo() {
     path: a.path.map((p) => ({ x: p.x, y: p.y })),
     offsetX: 0,
     offsetY: 0,
+    slideDistance: 0,
     state: "idle",
     animT: 0,
     shakePhase: 0,
@@ -624,6 +632,7 @@ function tryMove(arrow) {
   arrow.animT = 0;
   arrow.offsetX = 0;
   arrow.offsetY = 0;
+  arrow.slideDistance = 0;
   updateHud();
 }
 
@@ -647,24 +656,17 @@ function updateArrow(arrow, dt) {
 
   if (arrow.state === "sliding") {
     arrow.animT += dt;
-    const { x: dx, y: dy } = DELTA[arrow.dir];
-    let maxSteps = 0;
-    for (const c of arrow.path) {
-      let steps;
-      if (dx === 1) steps = state.size - c.x;
-      else if (dx === -1) steps = c.x + 1;
-      else if (dy === 1) steps = state.size - c.y;
-      else steps = c.y + 1;
-      maxSteps = Math.max(maxSteps, steps);
-    }
-    const travel = (maxSteps + 1.2) * state.cell;
-    const duration = Math.min(0.85, 0.28 + travel / 900);
+    const travelCells = snakeExitDistance(arrow.path, arrow.dir, state.size) + 0.35;
+    const travel = travelCells * state.cell;
+    const duration = Math.min(0.95, 0.32 + travel / 900);
     const t = Math.min(1, arrow.animT / duration);
     const eased = 1 - Math.pow(1 - t, 3);
-    arrow.offsetX = dx * travel * eased;
-    arrow.offsetY = dy * travel * eased;
+    arrow.slideDistance = travelCells * eased;
+    arrow.offsetX = 0;
+    arrow.offsetY = 0;
     if (t >= 1) {
       arrow.state = "gone";
+      arrow.slideDistance = 0;
       arrow.offsetX = 0;
       arrow.offsetY = 0;
       state.animating = state.arrows.some((a) => a.state === "sliding" || a.state === "shake");
@@ -698,7 +700,12 @@ function cellCenter(x, y) {
 function drawArrow(arrow) {
   if (arrow.state === "gone") return;
 
-  const pts = arrow.path.map((c) => {
+  const pathCells =
+    arrow.state === "sliding"
+      ? snakePositions(arrow.path, arrow.dir, arrow.slideDistance)
+      : arrow.path;
+
+  const pts = pathCells.map((c) => {
     const p = cellCenter(c.x, c.y);
     return { x: p.x + arrow.offsetX, y: p.y + arrow.offsetY };
   });

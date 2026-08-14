@@ -59,8 +59,65 @@ export function normalizePath(path) {
 }
 
 /**
- * Whether translating `path` in `dir` is blocked by `occupied` cells.
- * The whole polyline slides rigidly; any foreign cell on the swept path blocks it.
+ * Sample a polyline at arc-length `s` (1 = one cell).
+ * @param {Cell[]} pts
+ * @param {number} s
+ * @returns {Cell}
+ */
+export function pointAlong(pts, s) {
+  if (pts.length === 0) return { x: 0, y: 0 };
+  if (s <= 0) return { x: pts[0].x, y: pts[0].y };
+  const last = pts.length - 1;
+  if (s >= last) return { x: pts[last].x, y: pts[last].y };
+  const i = Math.floor(s);
+  const f = s - i;
+  const a = pts[i];
+  const b = pts[i + 1];
+  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
+}
+
+/**
+ * Snake pose after traveling `distance` cells: the head walks in `dir`,
+ * and each body cell follows the polyline (then the exit corridor).
+ *
+ * @param {Array<Cell | [number, number]>} path — tail → head
+ * @param {Dir} dir
+ * @param {number} distance
+ * @returns {Cell[]}
+ */
+export function snakePositions(path, dir, distance) {
+  const cells = normalizePath(path);
+  if (cells.length === 0) return [];
+  const { x: dx, y: dy } = DELTA[dir];
+  const extra = Math.max(2, Math.ceil(Math.max(0, distance)) + cells.length + 2);
+  /** @type {Cell[]} */
+  const pts = cells.map((c) => ({ x: c.x, y: c.y }));
+  const head = cells[cells.length - 1];
+  for (let i = 1; i <= extra; i++) {
+    pts.push({ x: head.x + dx * i, y: head.y + dy * i });
+  }
+  const d = Math.max(0, distance);
+  return cells.map((_, i) => pointAlong(pts, d + i));
+}
+
+/**
+ * Cells of travel until the tail is off the board (plus a little extra).
+ *
+ * @param {Array<Cell | [number, number]>} path
+ * @param {Dir} dir
+ * @param {number} size
+ */
+export function snakeExitDistance(path, dir, size) {
+  const cells = normalizePath(path);
+  if (cells.length === 0) return 0;
+  const head = cells[cells.length - 1];
+  return stepsToExit(head.x, head.y, dir, size) + cells.length;
+}
+
+/**
+ * Whether the snake can crawl out in `dir`. The head walks forward; the body
+ * follows the existing polyline. Only foreign cells on the head's corridor
+ * (or a self-collision that is not the vacating tail) block it.
  *
  * @param {Array<Cell | [number, number]>} path
  * @param {Dir} dir
@@ -69,21 +126,27 @@ export function normalizePath(path) {
  */
 export function canEscapePath(path, dir, size, occupied) {
   const cells = normalizePath(path);
+  if (cells.length === 0) return true;
   const { x: dx, y: dy } = DELTA[dir];
 
-  let maxSteps = 0;
-  for (const c of cells) {
-    maxSteps = Math.max(maxSteps, stepsToExit(c.x, c.y, dir, size));
+  let snake = cells.map((c) => ({ x: c.x, y: c.y }));
+  const maxMoves = snake.length + size + 2;
+
+  for (let move = 0; move < maxMoves && snake.length > 0; move++) {
+    const head = snake[snake.length - 1];
+    const next = { x: head.x + dx, y: head.y + dy };
+    const onBoard = next.x >= 0 && next.y >= 0 && next.x < size && next.y < size;
+
+    if (onBoard) {
+      if (occupied.has(cellKey(next.x, next.y))) return false;
+      for (let i = 1; i < snake.length; i++) {
+        if (snake[i].x === next.x && snake[i].y === next.y) return false;
+      }
+    }
+
+    snake = snake.slice(1).concat([next]).filter((c) => c.x >= 0 && c.y >= 0 && c.x < size && c.y < size);
   }
 
-  for (let step = 1; step <= maxSteps; step++) {
-    for (const c of cells) {
-      const nx = c.x + dx * step;
-      const ny = c.y + dy * step;
-      if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
-      if (occupied.has(cellKey(nx, ny))) return false;
-    }
-  }
   return true;
 }
 
