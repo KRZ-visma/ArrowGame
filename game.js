@@ -40,7 +40,6 @@ const STYLE = `:root {
   --ok: #5dffb0;
   --font-display: "Archivo Black", Impact, sans-serif;
   --font-body: "DM Sans", system-ui, sans-serif;
-  --board-max: min(98vmin, min(calc(100vw - 0.75rem), calc(100dvh - 3.85rem - var(--safe-top) - var(--safe-bottom))));
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -62,12 +61,14 @@ body {
 body {
   min-height: 100dvh;
   min-height: 100svh;
+  height: 100dvh;
+  height: 100svh;
   color: var(--ink);
   font-family: var(--font-body);
   background: var(--bg-0);
   display: grid;
   grid-template-rows: auto 1fr;
-  overflow-x: hidden;
+  overflow: hidden;
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 }
@@ -190,16 +191,19 @@ body {
 .stage {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.15rem clamp(0.35rem, 2vw, 0.75rem) calc(0.35rem + var(--safe-bottom));
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0 0 var(--safe-bottom);
   min-height: 0;
+  height: 100%;
 }
 
 .board-wrap {
   position: relative;
-  width: var(--board-max);
-  height: var(--board-max);
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
   animation: board-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -207,13 +211,10 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   touch-action: none;
   background: #000;
-  box-shadow:
-    0 0 0 1px var(--line),
-    0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
 .board-glow {
@@ -773,7 +774,6 @@ const levelsOverlay = document.getElementById("levelsOverlay");
 const levelGrid = document.getElementById("levelGrid");
 const btnCloseLevels = document.getElementById("btnCloseLevels");
 
-const VIEW_MIN_SCALE = 1;
 const VIEW_MAX_SCALE = 3;
 const TAP_SLOP_PX = 12;
 
@@ -786,6 +786,8 @@ const state = {
   cell: 40,
   pad: 24,
   side: 0,
+  viewW: 0,
+  viewH: 0,
   dpr: 1,
   viewScale: 1,
   viewX: 0,
@@ -844,29 +846,60 @@ function refreshPlayHud() {
 
 function resetView() {
   state.viewScale = 1;
-  state.viewX = 0;
-  state.viewY = 0;
+  fitCoverView();
 }
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+/** Scale 1 covers the long viewport axis; zoom-out can fit the full square. */
+function minViewScale() {
+  if (!state.side || !state.viewW || !state.viewH) return 1;
+  return Math.min(state.viewW, state.viewH) / state.side;
+}
+
+function boardOverflowsViewport() {
+  const scaled = state.side * state.viewScale;
+  return scaled > state.viewW + 0.5 || scaled > state.viewH + 0.5;
+}
+
+function panRange(viewLen, contentLen) {
+  if (contentLen <= viewLen) {
+    const centered = (viewLen - contentLen) / 2;
+    return [centered, centered];
+  }
+  return [viewLen - contentLen, 0];
+}
+
+function fitCoverView() {
+  if (!state.side || !state.viewW || !state.viewH) {
+    state.viewX = 0;
+    state.viewY = 0;
+    return;
+  }
+  state.viewScale = 1;
+  state.viewX = (state.viewW - state.side) / 2;
+  state.viewY = (state.viewH - state.side) / 2;
+  clampView();
+}
+
 function clampView() {
   const side = state.side || 0;
-  if (side <= 0) return;
-  state.viewScale = clamp(state.viewScale, VIEW_MIN_SCALE, VIEW_MAX_SCALE);
+  if (side <= 0 || !state.viewW || !state.viewH) return;
+  const minScale = minViewScale();
+  state.viewScale = clamp(state.viewScale, minScale, VIEW_MAX_SCALE);
   const scaled = side * state.viewScale;
-  const minPan = Math.min(0, side - scaled);
-  const maxPan = Math.max(0, side - scaled);
-  state.viewX = clamp(state.viewX, minPan, maxPan);
-  state.viewY = clamp(state.viewY, minPan, maxPan);
+  const [minX, maxX] = panRange(state.viewW, scaled);
+  const [minY, maxY] = panRange(state.viewH, scaled);
+  state.viewX = clamp(state.viewX, minX, maxX);
+  state.viewY = clamp(state.viewY, minY, maxY);
 }
 
 /** Zoom so the board point under (sx, sy) stays fixed. */
 function zoomAt(sx, sy, nextScale) {
   const prev = state.viewScale;
-  const scale = clamp(nextScale, VIEW_MIN_SCALE, VIEW_MAX_SCALE);
+  const scale = clamp(nextScale, minViewScale(), VIEW_MAX_SCALE);
   if (prev <= 0) return;
   const boardX = (sx - state.viewX) / prev;
   const boardY = (sy - state.viewY) / prev;
@@ -944,9 +977,8 @@ function hydrateLevel(level) {
   state.won = false;
   state.failed = false;
   hideEndOverlay();
-  resetView();
   refreshPlayHud();
-  resize();
+  resize({ resetView: true });
 }
 
 function startLevel(index) {
@@ -990,17 +1022,21 @@ function canEscape(arrow) {
   return canEscapeArrow(arrow, state.size, state.arrows);
 }
 
-function resize() {
+function resize(opts = {}) {
   const rect = canvas.getBoundingClientRect();
   state.dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.round(rect.width * state.dpr);
   canvas.height = Math.round(rect.height * state.dpr);
   ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
-  const side = Math.min(rect.width, rect.height);
+  state.viewW = rect.width;
+  state.viewH = rect.height;
+  // Cover the long axis so portrait height is used, not letterboxed.
+  const side = Math.max(rect.width, rect.height);
   state.side = side;
   state.pad = Math.max(14, side * 0.04);
-  state.cell = (side - state.pad * 2) / state.size;
-  clampView();
+  state.cell = state.size > 0 ? (side - state.pad * 2) / state.size : 0;
+  if (opts.resetView) resetView();
+  else clampView();
 }
 
 function clientToScreen(clientX, clientY) {
@@ -1278,7 +1314,7 @@ function syncHoverBoard(bx, by) {
     arrow.hovered = true;
     canvas.style.cursor = "pointer";
   } else {
-    canvas.style.cursor = state.viewScale > 1.01 ? "grab" : "default";
+    canvas.style.cursor = boardOverflowsViewport() ? "grab" : "default";
   }
 }
 
@@ -1349,7 +1385,7 @@ canvas.addEventListener("pointermove", (e) => {
       const dx = screen.x - panLastX;
       const dy = screen.y - panLastY;
       if (Math.hypot(dx, dy) >= TAP_SLOP_PX) {
-        if (state.viewScale > 1.01) {
+        if (boardOverflowsViewport()) {
           gestureMode = "pan";
           panLastX = screen.x;
           panLastY = screen.y;
@@ -1418,7 +1454,7 @@ function endPointer(e) {
     }
     if (activePointers.size === 1) {
       const remaining = [...activePointers.values()][0];
-      gestureMode = state.viewScale > 1.01 ? "pan" : "none";
+      gestureMode = boardOverflowsViewport() ? "pan" : "none";
       panLastX = remaining.x;
       panLastY = remaining.y;
       return;
