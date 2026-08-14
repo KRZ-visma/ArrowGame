@@ -15,6 +15,7 @@ import {
   menuStats,
   minMovesForArrows,
   starsForClear,
+  canRetryForThreeStars,
   hasFailed,
   parseStarRecords,
   serializeStarRecords,
@@ -670,6 +671,7 @@ function buildUI() {
         <p class="overlay-copy" id="endCopy">Every arrow found its way out.</p>
         <div class="end-actions">
           <button type="button" class="btn btn-primary" id="btnEndPrimary">Next</button>
+          <button type="button" class="btn" id="btnEndRetry" hidden>Retry for 3 stars</button>
           <button type="button" class="btn" id="btnEndSkip" hidden>Skip this level</button>
           <button type="button" class="btn" id="btnEndLevels">All levels</button>
         </div>
@@ -764,6 +766,7 @@ const endTitle = document.getElementById("endTitle");
 const endCopy = document.getElementById("endCopy");
 const endStars = document.getElementById("endStars");
 const btnEndPrimary = document.getElementById("btnEndPrimary");
+const btnEndRetry = document.getElementById("btnEndRetry");
 const btnEndSkip = document.getElementById("btnEndSkip");
 const btnEndLevels = document.getElementById("btnEndLevels");
 const btnReset = document.getElementById("btnReset");
@@ -864,12 +867,14 @@ function hideEndOverlay() {
   endOverlay.hidden = true;
   state.endMode = null;
   endCard.classList.remove("is-fail");
+  btnEndRetry.hidden = true;
 }
 
 function showWinSplash(stars) {
   const next = nextLevelIndex(state.levelIndex, LEVEL_PACK.length);
   const nextNumber = next + 1;
   const last = state.levelIndex >= LEVEL_PACK.length - 1;
+  const retry = canRetryForThreeStars(stars);
   state.endMode = "win";
   endCard.classList.remove("is-fail");
   endKicker.textContent = "Cleared";
@@ -877,9 +882,16 @@ function showWinSplash(stars) {
   setEndStars(stars);
   endStars.hidden = false;
   btnEndSkip.hidden = true;
-  endCopy.textContent = last
-    ? `That's the last level. Up next: Level ${nextNumber}.`
-    : `Up next: Level ${nextNumber}.`;
+  btnEndRetry.hidden = !retry;
+  if (retry) {
+    endCopy.textContent = last
+      ? `That's the last level. Retry for 3 stars, or continue to Level ${nextNumber}.`
+      : `Retry for 3 stars, or continue to Level ${nextNumber}.`;
+  } else {
+    endCopy.textContent = last
+      ? `That's the last level. Up next: Level ${nextNumber}.`
+      : `Up next: Level ${nextNumber}.`;
+  }
   btnEndPrimary.textContent = `Next — Level ${nextNumber}`;
   endOverlay.hidden = false;
 }
@@ -890,6 +902,7 @@ function showFailSplash() {
   endKicker.textContent = "Failed";
   endTitle.textContent = "Level failed";
   endStars.hidden = true;
+  btnEndRetry.hidden = true;
   endCopy.textContent =
     "You failed to complete the level. Three arrows could not move — reset to try again.";
   btnEndPrimary.textContent = "Reset";
@@ -1276,6 +1289,7 @@ function onEndPrimary() {
 }
 
 btnEndPrimary.addEventListener("click", () => onEndPrimary());
+btnEndRetry.addEventListener("click", () => startLevel(state.levelIndex));
 btnEndSkip.addEventListener("click", () => skipCurrentLevel());
 btnEndLevels.addEventListener("click", () => openLevels());
 
