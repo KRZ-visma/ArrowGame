@@ -113,7 +113,7 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
 }
 
 /**
- * Fill empty center cells with arrows (minimum length 2).
+ * Fill empty center cells with arrows (prefer length 2, allow length 1 when needed).
  * Edge cells may remain empty.
  * @param {number} size
  * @param {Set<string>} occupied
@@ -145,7 +145,9 @@ function fillEmptyCells(size, occupied, placed, rng) {
         }
         
         if (!placed2Cell) {
+          const dir = DIRS[Math.floor(rng() * 4)];
           occupied.add(key);
+          placed.push({ dir, path: [[x, y]] });
         }
       }
     }
