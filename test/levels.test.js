@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   TUTORIAL,
+  LEVEL_PACK,
   LEVELS,
   buildSolvableLevel,
   makeHandLevel,
-  generateLevel,
   getLevelData,
   rngFrom,
+  buildLevelForIndex,
 } from "../js/levels.js";
 import { canEscapePath, cellKey } from "../js/logic.js";
 
@@ -51,12 +52,19 @@ describe("level generation", () => {
     }
   });
 
-  it("exposes the hand pack then generated levels", () => {
-    assert.equal(LEVELS.length, 12);
-    assert.equal(getLevelData(0), TUTORIAL);
-    assert.deepEqual(getLevelData(0), generateLevel(0));
-    const generated = generateLevel(LEVELS.length + 3);
-    assert.ok(generated.size >= 8);
-    assert.ok(generated.arrows.length >= 1);
+  it("serves pre-generated pack data at runtime", () => {
+    assert.equal(LEVEL_PACK.length, 100);
+    assert.equal(LEVELS, LEVEL_PACK);
+    assert.deepEqual(getLevelData(0), TUTORIAL);
+    assert.deepEqual(getLevelData(0), LEVEL_PACK[0]);
+    assert.deepEqual(getLevelData(15), LEVEL_PACK[15]);
+    assert.deepEqual(getLevelData(999), LEVEL_PACK[LEVEL_PACK.length - 1]);
+    assert.deepEqual(getLevelData(-3), LEVEL_PACK[0]);
+  });
+
+  it("matches the generator output for sampled indices", () => {
+    for (const index of [0, 1, 11, 12, 50, 99]) {
+      assert.deepEqual(LEVEL_PACK[index], buildLevelForIndex(index));
+    }
   });
 });

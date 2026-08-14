@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --experimental-test-coverage --test-coverage-include='js/**/*.js' --test-coverage-lines=99 --test-coverage-branches=90 --test-coverage-functions=100 --test test/*.test.js"
+    "test": "node --experimental-test-coverage --test-coverage-include='js/**/*.js' --test-coverage-lines=99 --test-coverage-branches=90 --test-coverage-functions=100 --test test/*.test.js",
+    "generate-levels": "node scripts/generate-levels.js"
   }
 }
