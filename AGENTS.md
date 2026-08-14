@@ -9,108 +9,113 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 - Vanilla HTML / CSS / JS — no framework, bundler, or TypeScript unless explicitly requested
 - Native ES modules (`type="module"`) — no bundler
 - Storage key: `arrow-out-level` (do not break without a migration). Owned keys live in `STORAGE_KEYS`; clear-all must remove every entry there
-- Stars / unlocks: `arrow-out-stars` (`STARS_KEY`) JSON `{ best, unlocked, skipped }` — `best` maps level index → 1–3 (keep the higher on replay); `unlocked` is the furthest playable index; `skipped` is uncleared skipped indices (max `MAX_SKIPS` / 3). Completing a skipped level removes it and restores a skip. Old saves without `skipped` parse as `[]`. Do not fold this into `arrow-out-level`
-- Strikes: 3 blocked taps (arrow cannot move) fail the run. Stars on a clear: 3 at par (arrow count), 2 at +1 tap, 1 otherwise — extras are blocked taps; each arrow leaves once so par is `arrows.length`
+- Stars / unlocks: `arrow-out-stars` (`STARS_KEY`) JSON `{ best, unlocked, skipped }` — see `agents/progress.md`
+- Strikes / stars-on-clear: see `agents/progress.md` (par = `arrows.length`)
 - UI copy language: **English**
 - Unit tests: Node’s built-in test runner (`npm test` → `node --test test/`)
-- Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100). Every baked level must pass `isSolvable` (the generator repairs filler deadlocks; the script exits if a level is still stuck). Pack order follows generation index (tutorial first) — do not sort by `levelComplexity`. That score is clearance-led (`blocked0`, `waves`, `depthSum`; no board `size`) for analysis only. `levelParamsForIndex` must not drop size or snake-count after the hand specs. Puzzle-arrow `minBends` ramps with pack index (`minBendsForLevelIndex`: 0 until 20, then +1 each 10 levels); growth hugs occupied cells and softens the floor only when nothing fits
-- PWA: `manifest.webmanifest` + root `sw.js` (precache app shell). Use **relative** `start_url` / `scope` / icon / precache URLs (`./…`) so GitHub Pages project sites (e.g. `/ArrowGame/`) stay installable. Bump `CACHE_NAME` in `sw.js` when shipped assets change. Google Fonts stay network-only (offline falls back to Impact / system-ui). Do not add a bundler for the PWA
+- Levels: static pack in `js/levels-data.js` — details and **pack ownership** in `agents/levels.md`
+- PWA: `manifest.webmanifest` + root `sw.js` — details in `agents/pwa.md`
+- Play UI is split across `game.js` + `js/ui-shell.js`, `js/board-view.js`, `js/board-draw.js`, `js/overlays.js`, `js/pointer-input.js`, `js/play-session.js` — see `agents/ui.md`
 
 ## Files (by domain)
 
 | Domain | File(s) | Notes / tests |
 | --- | --- | --- |
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module; manifest + theme-color + apple-touch-icon; registers `./sw.js` |
-| PWA | `manifest.webmanifest`, `sw.js`, `icons/*` | Installable standalone; offline shell via precache; maskable + any icons — **unit tests** (`test/pwa.test.js`) |
-| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD (level + chances), end splash (win/fail + stars), All levels overlay, Menu overlay, pointer/keyboard |
-| Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` (greedy clear is enough — leaving only frees cells) — **unit tests** |
-| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places winding multi-cell puzzle arrows via `growWindingPath` (bends, U-turns, multi-turn curls/coils that hug neighbors; `minBends` floor; last segment matches exit dir; tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer a 3-cell L — always when `minBends` ≥ 1 — then length 2, allow length 1; edges may stay empty); `repairToSolvable` then reorients leftover deadlocks (`fillEmptyCells` does not check escape, so two fillers can face each other); repair may reverse a snake (new tail can sit on an edge; at least one endpoint stays in the center); `makeHandLevel` keeps the densest **solvable** candidate across seed retries; TUTORIAL is built via `buildTutorial()` and includes an L-shape; pack order follows generation index; `levelComplexity` is clearance-led (not used to reorder) — **unit tests** |
-| Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress`, star records, skip quota (`MAX_SKIPS` / `skipLevel` / `canSkipLevel`), `starsForClear` / `MAX_STRIKES` — **unit tests** |
+| PWA | `manifest.webmanifest`, `sw.js`, `icons/*` | Lane: `agents/pwa.md` — **unit tests** (`test/pwa.test.js`) |
+| Play orchestration | `game.js` | Level load, moves/strikes/win-fail, wires UI modules |
+| UI shell / CSS | `js/ui-shell.js` | Injected CSS + DOM shell — lane: `agents/ui.md` |
+| Board view | `js/board-view.js` | Cover-fit, zoom/pan, resize, screen↔board — lane: `agents/ui.md` |
+| Board draw | `js/board-draw.js` | Arrow/board paint + hit-test — lane: `agents/ui.md` |
+| Overlays | `js/overlays.js` | End splash, Menu, All levels — lane: `agents/ui.md` |
+| Pointer input | `js/pointer-input.js` | Pinch/pan/tap — lane: `agents/ui.md` |
+| Play session | `js/play-session.js` | Shared `state` + star records box for UI modules |
+| Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` — **unit tests** |
+| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Lane: `agents/levels.md` — **unit tests** |
+| Session progress | `js/progress.js` | Lane: `agents/progress.md` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `manifest.webmanifest`, `sw.js`, `icons/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
-| Agent instructions | `AGENTS.md` | Conventions, workflow, pitfalls — **update when a PR teaches something new** (see below) |
+| Agent instructions | `AGENTS.md` + `agents/*.md` | Core contract here; lane lessons in `agents/` — see below |
 
-Touch only the relevant module(s) for a feature. Prefer extending these modules over growing unrelated logic back into `game.js`.
+Touch only the relevant module(s) for a feature. Prefer extending domain modules over growing unrelated logic back into `game.js`.
 
-## Design
+## Design (invariants)
 
 - Keep the existing visual system (Archivo Black + DM Sans, `.atmosphere`, brand-first **ARROW OUT**)
 - No generic AI look (purple gradients, cream + terracotta, broadsheet)
 - One job per section; board is the hero — no card clutter in the play surface
-- **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport; PWA `display: standalone` + apple-touch meta so Add to Home Screen matches the dark shell (`theme_color` / `background_color` `#050505`)
-- **Restart vs Menu vs Skip** — toolbar restart and fail-splash restart both redo the **current** level only. Level number, stats, All levels, skip, and start-over-from-zero live in the Menu overlay — do not show the level index on the play surface. Chance pips stay in the top bar beside Menu (always visible while playing). Skip also appears on the fail splash when a slot remains. Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into current-level restart
-- **Board view** — the canvas fills the stage under the top bar (no letterboxed square chrome). Default fit covers the long viewport axis so portrait height is used; pinch/wheel zooms, drag pans when the board overflows. Short taps still select arrows. Draw and hit-test share the same view transform; reset to cover-fit on level load / restart
-- **Functional UI names** — player-facing labels name what the action does for the player (Restart, Skip, Clear), not technical/developer jargon (Reset). Code identifiers may stay technical (`btnReset`); copy, `title`/`aria-label`, and control docs must use the functional name
-- **Skip quota** — at most three outstanding skipped (uncleared) levels. Skip unlocks the next pack index. Finishing a skipped level from All levels restores a slot. Skip is disabled on cleared or already-skipped levels, and when the quota is empty
-- **Overlay copy** — one fact per line. Kicker, title, body, and buttons must not restate the same destination, outcome, or action. The primary button is the action; body copy is not a second CTA
-- **End splash** — win and fail share one overlay; do not auto-advance. Win shows stars and a continue action (advances). A 1- or 2-star clear also offers retry-this-level on a button, not in body copy; hide that retry on a 3-star win and on fail. Fail offers restart-this-level
-- **All levels** — each cell shows three ★ `.level-pip` glyphs; earned ones need `.level-pip.filled` (accent color, not clip-path). That rule is separate from `.star.filled` on the win splash — a missing fill or tiny clip-path pips make 1/2/3 look uncleared
-- The painted **tip points the crawl/exit `dir`**. The last path segment matches `dir`. A mismatch (chevron one way, slide another) reads as broken, not as extra puzzle depth — keep winding bodies, but the head still faces the way it leaves
+- **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)`; canvas usable on ~393×852; PWA standalone + apple-touch meta (`theme_color` / `background_color` `#050505`)
+- The painted **tip points the crawl/exit `dir`**. Last path segment matches `dir`
+- Surface roles, overlays, board view, skip quota, copy rules: **`agents/ui.md`**
 
 ## Workflow
 
 ### Idea → approval → build
 
-1. **Show a short idea first** — what you want to do, why, which modules/files, and risks (level solvability, storage, deploy paths). **Validate the request:** if it fights a core read (tip = leave direction, mobile-first, …) or looks like a worse game, say so, give a short opinion and an alternative, and wait. Do not treat “the user just said it” as a skip-judgment card. No code, no branch, no commit/PR in this phase.
+1. **Show a short idea first** — what you want to do, why, which modules/files, and risks (level solvability, storage, deploy paths). **Validate the request:** if it fights a core read (tip = leave direction, mobile-first, …) or looks like a worse game, say so, give a short opinion and an alternative, and wait. No code, no branch, no commit/PR in this phase.
 2. **Stop and wait** for explicit user approval, e.g. **"build it"**, "go", "approved", "ok to build".
 3. **Only then build** — without that confirmation do not implement, including “just preparing”.
 4. **Exceptions:**
    - Pure questions / explanation → answer only, no build.
    - Explicit “build directly …” in the same request → may start immediately **unless** the request fights a core rule; then still push back first.
    - **Fine-tuning** an already approved idea (small adjustment within the same scope) → may continue without new approval, but still flag it if the tweak would break a core read (e.g. tip ≠ leave direction).
-   - Anything that is effectively a **new idea** (different direction, extra feature, other domain, other approach) → show a new idea and wait for approval again.
+   - Anything that is effectively a **new idea** → show a new idea and wait for approval again.
+
+### Parallel lanes (reduce merge conflicts)
+
+Name the lane in the prompt and edit **only that lane’s files** (code + matching `agents/*.md`):
+
+| Lane | Primary code | Instruction file |
+| --- | --- | --- |
+| UI shell / CSS | `js/ui-shell.js` | `agents/ui.md` |
+| Board view / draw / input | `js/board-view.js`, `js/board-draw.js`, `js/pointer-input.js` | `agents/ui.md` |
+| Overlays / HUD copy | `js/overlays.js` | `agents/ui.md` |
+| Play wiring | `game.js`, `js/play-session.js` | `agents/ui.md` (sparingly) |
+| Levels generator | `js/level-build.js`, `js/levels.js`, `scripts/generate-levels.js`, `test/levels.test.js` | `agents/levels.md` |
+| Pack bake | `js/levels-data.js` only when the PR owns the pack | `agents/levels.md` |
+| Progress / storage | `js/progress.js`, `test/progress.test.js` | `agents/progress.md` |
+| PWA / deploy assets | `sw.js`, `manifest.webmanifest`, `icons/*`, deploy workflow | `agents/pwa.md` |
+| Core contract | `AGENTS.md` | Rare — invariants, workflow gate, Files table rows |
+
+Do not put two agents on the same primary file. UI overlay work and board-view work can run in parallel; two overlay PRs should not.
 
 ### Execution (after approval)
 
-1. Small, focused diffs — only what the task asks; **one feature ≈ one domain module** when possible
-2. Changes to level generation, escape rules, undo, or progress → add or update **unit tests** (not Playwright/UI tests). Use `npm test` (Node’s built-in runner) so pure logic imports without a browser
-3. Before merge: unit tests must **pass** locally; the unit-test workflow must be green. When testing board coverage, check occupied cells (via Set size) not arrow count, since arrows can be multi-cell — and assert **center** cells are filled, not the full board (`fillEmptyCells` leaves edges empty). Assert every pack level (and generator output) is `isSolvable` — greedy removal is enough because a free arrow only vacates cells
-4. UI / canvas / controls changes: verify on **iPhone 16 Pro**-sized viewport (≈ 393×852, DPR 3) — layout, touch, safe areas; note briefly in the PR that this was checked
-5. Do not add secrets, analytics, or external APIs without asking
+1. Small, focused diffs — **one feature ≈ one domain module** when possible
+2. Changes to level generation, escape rules, undo, or progress → add or update **unit tests**. Use `npm test`
+3. Before merge: unit tests must **pass** locally; CI green. Board coverage: occupied cells (Set size), assert **center** cells filled. Assert every pack level is `isSolvable`
+4. UI / canvas / controls: verify on **iPhone 16 Pro**-sized viewport (≈ 393×852, DPR 3); note in the PR
+5. No secrets, analytics, or external APIs without asking
 6. Commits/PRs short and clear; UI copy always English
 7. Do not silently change the `localStorage` key or progress schema without a migration plan
-8. If you split or rename shipped files, update `.github/workflows/deploy-pages.yml` so Pages still deploys every asset (include `manifest.webmanifest`, `sw.js`, and `icons/*` for the PWA). When changing precached game assets, bump `CACHE_NAME` in `sw.js` and keep the PRECACHE list aligned with deploy staging
-9. Start/rebase PRs from recent `main` before merge; serialize parallel PRs that touch the same domain
-10. Mark the pull request **ready for review** (not left as draft) when the change is ready — and wait until required checks are green
-11. **Update `AGENTS.md` when the PR teaches something new** — see [Improve instructions](#improve-instructions-when-learned) below
+8. Split/rename shipped files → update deploy-pages + bump `CACHE_NAME` / PRECACHE in `sw.js` (see `agents/pwa.md`)
+9. Start/rebase PRs from recent `main` before merge; avoid parallel PRs that share a primary file
+10. Mark the PR **ready for review** when ready; wait for required checks
+11. **Update agent instructions when the PR teaches something new** — prefer the **lane file** in `agents/`; touch `AGENTS.md` only for core contract / Files table / workflow
 
 ### Improve instructions (when learned)
 
-When a pull request surfaces something future agents should know, add a small, concrete note to `AGENTS.md`. If nothing new was learned, skip the update — do not pad the doc for its own sake.
+Add a small, concrete note to the **matching lane file** under `agents/`. Use `AGENTS.md` only for cross-cutting invariants, new Files-table rows, or workflow changes. If nothing new was learned, skip.
 
-**Good updates (pick what fits the PR):**
+**Good updates:** new file → Files table + lane note; storage/API → `agents/progress.md` or Stack pointer; UI surface rule → `agents/ui.md` (roles, not frozen labels); solvability pitfall → `agents/levels.md`.
 
-- New or moved file → add or adjust a row in **Files (by domain)**
-- New convention, API, or storage detail → one bullet under **Stack**, **Design**, or **Do not**
-- UI / copy → a rule the surface must keep complying with (what must remain true), not a freeze of the current headline, button label, or body string
-- Design / Stack / Do not → name invariants (roles, when something appears, what must not happen). Do not freeze current button labels, headlines, or DOM ids unless the id is the stable contract (e.g. storage keys, `STORAGE_KEYS`)
-- Bug, edge case, or solvability pitfall → short note so the mistake is not repeated
-- Workflow or testing lesson → clarify **Execution** or link deploy/CI paths that were easy to miss
+**How to keep it useful:** minimal diff; one bullet; PR description one-liner for Agent instructions (what file + why), or “nothing new to capture”.
 
-**How to keep it useful:**
-
-- Minimal diff — usually one bullet, table row, or a tightened sentence; no drive-by rewrites
-- Tie the note to this PR’s change (what changed, where it lives, what to watch for)
-- In the PR description, add a one-line **Agent instructions** note when you updated the doc: what you added and why; if you skipped, say “nothing new to capture”
-
-**When to skip:**
-
-- Nothing new was learned — no update needed
-- The PR’s only purpose is editing `AGENTS.md` (the doc change *is* the feature)
-- A pure revert with no new lesson beyond “reverted X”
+**When to skip:** nothing learned; the PR’s only purpose is editing instructions; pure revert.
 
 ## Do not
 
-- Ship a feature PR without updating `AGENTS.md` when the change introduced something future agents should know
+- Ship a feature PR without updating the matching `agents/*.md` (or `AGENTS.md` for core contract) when the change introduced something future agents should know
 - Change code without a prior idea and explicit approval (“build it” / “go” etc.), unless an exception above applies
 - Add dependencies or a bundler “for later”
-- Dump new domain logic into `game.js` when it belongs in `js/logic.js`, `js/levels.js`, or `js/progress.js`
-- Silently change the localStorage schema — add keys to `STORAGE_KEYS` (as with `arrow-out-stars`) instead of overloading `arrow-out-level`. Additive fields on `arrow-out-stars` (such as `skipped`) must parse missing values as defaults so old saves keep working
+- Dump new domain logic into `game.js` when it belongs in `js/logic.js`, `js/levels.js`, `js/progress.js`, or a UI lane module
+- Silently change the localStorage schema — add keys to `STORAGE_KEYS`; additive `arrow-out-stars` fields must parse missing values as defaults
 - Overhaul hero/layout for a bugfix or small feature
 - Merge while required checks are failing or still running
 - Add Playwright/e2e UI tests by default — use **unit tests** for puzzle logic instead
-- Ship a `LEVEL_PACK` entry that `isSolvable` rejects — `fillEmptyCells` can deadlock (facing fillers); `repairToSolvable` must run after fill, and `generate-levels` must fail the run if a level stays stuck
-- Place a winding arrow whose head crawls into its own body — `canEscapePath` rejects tight inward spirals; U-turns must end traveling in the exit dir (walk opposite, jog, then out)
+- Rewrite `js/levels-data.js` unless the PR’s job is baking/shipping the pack — see `agents/levels.md`
+- Ship a `LEVEL_PACK` entry that `isSolvable` rejects — see `agents/levels.md`
+- Place a winding arrow whose head crawls into its own body — see `agents/levels.md`
 - Paint a tip that disagrees with how the arrow leaves — last segment and chevron match crawl `dir`
-- Execute a gameplay change that fights a core read just because the user asked — push back with an opinion and an alternative first
-- Reset generated `size`/`count` after `HAND_LEVEL_SPECS` (the old `8 + (index - handCount) / 2` curve jumped back to 8×8, so level 13 was easier than 12). Continue from the last hand spec; keep pack order as generation index (do not sort by `levelComplexity`)
+- Execute a gameplay change that fights a core read just because the user asked — push back first
+- Reset generated `size`/`count` after `HAND_LEVEL_SPECS` — continue from the last hand spec; pack order = generation index (do not sort by `levelComplexity`)
