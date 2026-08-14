@@ -9,6 +9,8 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 - Vanilla HTML / CSS / JS — no framework, bundler, or TypeScript unless explicitly requested
 - Native ES modules (`type="module"`) — no bundler
 - Storage key: `arrow-out-level` (do not break without a migration). Owned keys live in `STORAGE_KEYS`; clear-all must remove every entry there
+- Stars / unlocks: `arrow-out-stars` (`STARS_KEY`) JSON `{ best, unlocked }` — `best` maps level index → 1–3 (keep the higher on replay); `unlocked` is the furthest playable index. Do not fold this into `arrow-out-level`
+- Strikes: 3 blocked taps (arrow cannot move) fail the run. Stars on a clear: 3 at par (arrow count), 2 at +1 tap, 1 otherwise — extras are blocked taps; each arrow leaves once so par is `arrows.length`
 - UI copy language: **English**
 - Unit tests: Node’s built-in test runner (`npm test` → `node --test test/`)
 - Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100)
@@ -18,10 +20,10 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Domain | File(s) | Notes / tests |
 | --- | --- | --- |
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
-| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD, Menu overlay, pointer/keyboard |
+| Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD (level + chances), end splash (win/fail + stars), All levels overlay, Menu overlay, pointer/keyboard |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy — **unit tests** |
 | Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places multi-cell puzzle arrows (tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer length 2, allow length 1; edges may stay empty); TUTORIAL is built via `buildTutorial()` for consistency — **unit tests** |
-| Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress` — **unit tests** |
+| Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress`, star records, `starsForClear` / `MAX_STRIKES` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
 | Agent instructions | `AGENTS.md` | Conventions, workflow, pitfalls — **update when a PR teaches something new** (see below) |
@@ -34,7 +36,8 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 - No generic AI look (purple gradients, cream + terracotta, broadsheet)
 - One job per section; board is the hero — no card clutter in the play surface
 - **Primary target device: iPhone 16 Pro (Safari)** — mobile first; large touch targets; safe areas via `viewport-fit=cover` + `env(safe-area-inset-*)` (Dynamic Island, home indicator); canvas must remain usable on a ~393×852 viewport
-- **Reset vs Menu** — the toolbar Reset button restarts the **current** level only. Level number, stats, and “start over from zero” live in the Menu overlay (`btnMenu`). Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level`) then starts level 0; do not fold that into Reset
+- **Reset vs Menu** — the toolbar Reset button restarts the **current** level only (and the fail splash Reset does the same). Level number, stats, All levels, and “start over from zero” live in the Menu overlay (`btnMenu`). Clear-all wipes every key in `STORAGE_KEYS` (currently `arrow-out-level` and `arrow-out-stars`) then starts level 0; do not fold that into Reset
+- **End splash** — win and fail share one overlay. Win shows stars + the next level number and requires **Next**. Fail tells the player they did not complete the level and requires **Reset**. Do not auto-advance
 
 ## Workflow
 
@@ -92,7 +95,7 @@ When a pull request surfaces something future agents should know, add a small, c
 - Change code without a prior idea and explicit approval (“ja bouwen” etc.), unless an exception above applies
 - Add dependencies or a bundler “for later”
 - Dump new domain logic into `game.js` when it belongs in `js/logic.js`, `js/levels.js`, or `js/progress.js`
-- Silently change the localStorage schema
+- Silently change the localStorage schema — add keys to `STORAGE_KEYS` (as with `arrow-out-stars`) instead of overloading `arrow-out-level`
 - Overhaul hero/layout for a bugfix or small feature
 - Merge while required checks are failing or still running
 - Add Playwright/e2e UI tests by default — use **unit tests** for puzzle logic instead
