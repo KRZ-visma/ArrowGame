@@ -4,6 +4,9 @@ import {
   TURNS,
   cellKey,
   canEscapePath,
+  canEscapeAmong,
+  stuckArrows,
+  isSolvable,
 } from "./logic.js";
 
 /**
@@ -108,6 +111,7 @@ export function buildSolvableLevel(size, count, rng = Math.random) {
   }
 
   fillEmptyCells(size, occupied, placed, rng);
+  repairToSolvable({ size, arrows: placed });
 
   return { size, arrows: placed };
 }
@@ -152,6 +156,79 @@ function fillEmptyCells(size, occupied, placed, rng) {
       }
     }
   }
+}
+
+/**
+ * Cardinal step from cell `a` to `b`, or null if they are not orthogonal neighbors.
+ * @param {[number, number]} a
+ * @param {[number, number]} b
+ * @returns {import("./logic.js").Dir | null}
+ */
+function dirFromCells(a, b) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  if (dx === 1 && dy === 0) return "E";
+  if (dx === -1 && dy === 0) return "W";
+  if (dx === 0 && dy === 1) return "S";
+  if (dx === 0 && dy === -1) return "N";
+  return null;
+}
+
+/**
+ * Flip a length-1 dir, or reverse a multi-cell snake, so it can leave `stuck`.
+ * @param {{ dir: string, path: number[][] }} arrow
+ * @param {number} size
+ * @param {Array<{ dir: string, path: number[][] }>} stuck
+ */
+function reorientStuckArrow(arrow, size, stuck) {
+  if (arrow.path.length === 1) {
+    const prev = arrow.dir;
+    for (const dir of DIRS) {
+      if (dir === prev) continue;
+      arrow.dir = dir;
+      if (canEscapeAmong(arrow, size, stuck)) return true;
+    }
+    arrow.dir = prev;
+    return false;
+  }
+  const prevPath = arrow.path;
+  const prevDir = arrow.dir;
+  const rev = prevPath.slice().reverse();
+  const ndir = dirFromCells(rev[rev.length - 2], rev[rev.length - 1]);
+  if (!ndir) return false;
+  arrow.path = rev;
+  arrow.dir = ndir;
+  if (canEscapeAmong(arrow, size, stuck)) return true;
+  arrow.path = prevPath;
+  arrow.dir = prevDir;
+  return false;
+}
+
+/**
+ * Break leftover deadlocks without changing occupancy. `fillEmptyCells` can place
+ * arrows that face each other (length-1 pair on one file); those fillers are not
+ * in reverse-clear order. Reorient stuck arrows until greedy clear succeeds.
+ *
+ * @param {{ size: number, arrows: Array<{ dir: string, path: number[][] }> }} level
+ * @returns {boolean}
+ */
+export function repairToSolvable(level) {
+  const { size, arrows } = level;
+  if (isSolvable(size, arrows)) return true;
+
+  for (let step = 0; step < arrows.length + 2; step += 1) {
+    const stuck = stuckArrows(size, arrows);
+    if (stuck.length === 0) return true;
+    let changed = false;
+    for (const arrow of stuck) {
+      if (reorientStuckArrow(arrow, size, stuck)) {
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) return false;
+  }
+  return isSolvable(size, arrows);
 }
 
 /** Mulberry32 — deterministic levels from an index */
@@ -200,7 +277,8 @@ function buildTutorial() {
   
   const rng = rngFrom(1);
   fillEmptyCells(base.size, occupied, base.arrows, rng);
-  
+  repairToSolvable(base);
+
   return base;
 }
 

@@ -8,6 +8,9 @@ import {
   stepsToExit,
   snakePositions,
   snakeExitDistance,
+  isSolvable,
+  stuckArrows,
+  canEscapeAmong,
 } from "../js/logic.js";
 
 describe("stepsToExit", () => {
@@ -190,5 +193,35 @@ describe("buildOccupancy / canEscape", () => {
   it("allows escape after the blocker is gone", () => {
     const cleared = [arrows[0], { ...arrows[1], state: "gone" }];
     assert.equal(canEscape(cleared[0], 4, cleared), true);
+  });
+});
+
+describe("isSolvable / stuckArrows", () => {
+  it("treats an empty board as solved", () => {
+    assert.equal(isSolvable(4, []), true);
+    assert.deepEqual(stuckArrows(4, []), []);
+  });
+
+  it("accepts a single free arrow", () => {
+    const arrows = [{ dir: "E", path: [{ x: 0, y: 0 }] }];
+    assert.equal(isSolvable(3, arrows), true);
+    assert.equal(canEscapeAmong(arrows[0], 3, arrows), true);
+  });
+
+  it("rejects two length-1 arrows facing each other", () => {
+    const arrows = [
+      { dir: "S", path: [[5, 5]] },
+      { dir: "N", path: [[5, 7]] },
+    ];
+    const stuck = stuckArrows(14, arrows);
+    assert.equal(isSolvable(14, arrows), false);
+    assert.equal(stuck.length, 2);
+    assert.equal(stuck[0], arrows[0]);
+    assert.equal(stuck[1], arrows[1]);
+  });
+
+  it("clears after the blocking partner is gone", () => {
+    const arrows = [{ dir: "N", path: [[5, 7]] }];
+    assert.equal(isSolvable(14, arrows), true);
   });
 });
