@@ -23,6 +23,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
+| Agent instructions | `AGENTS.md` | Conventions, workflow, pitfalls — **update every PR** (see below) |
 
 Touch only the relevant module(s) for a feature. Prefer extending these modules over growing unrelated logic back into `game.js`.
 
@@ -58,9 +59,33 @@ Touch only the relevant module(s) for a feature. Prefer extending these modules 
 8. If you split or rename shipped files, update `.github/workflows/deploy-pages.yml` so Pages still deploys every asset
 9. Start/rebase PRs from recent `main` before merge; serialize parallel PRs that touch the same domain
 10. Mark the pull request **ready for review** (not left as draft) when the change is ready — and wait until required checks are green
+11. **Improve `AGENTS.md` in every PR** — see [Improve instructions](#improve-instructions-every-pr) below
+
+### Improve instructions (every PR)
+
+Each pull request must include at least one small, concrete update to `AGENTS.md` so later agents inherit what this change taught. Treat it as part of the deliverable, not optional cleanup.
+
+**Good updates (pick what fits the PR):**
+
+- New or moved file → add or adjust a row in **Files (by domain)**
+- New convention, API, or storage detail → one bullet under **Stack**, **Design**, or **Do not**
+- Bug, edge case, or solvability pitfall → short note so the mistake is not repeated
+- Workflow or testing lesson → clarify **Execution** or link deploy/CI paths that were easy to miss
+
+**How to keep it useful:**
+
+- Minimal diff — usually one bullet, table row, or a tightened sentence; no drive-by rewrites
+- Tie the note to this PR’s change (what changed, where it lives, what to watch for)
+- In the PR description, add a one-line **Agent instructions** note: what you added to `AGENTS.md` and why
+
+**When to skip:**
+
+- The PR’s only purpose is editing `AGENTS.md` (the doc change *is* the feature)
+- A pure revert with no new lesson beyond “reverted X” — optional one-line note at most
 
 ## Do not
 
+- Ship a feature PR without updating `AGENTS.md` when the change introduced something future agents should know
 - Change code without a prior idea and explicit approval (“ja bouwen” etc.), unless an exception above applies
 - Add dependencies or a bundler “for later”
 - Dump new domain logic into `game.js` when it belongs in `js/logic.js`, `js/levels.js`, or `js/progress.js`
