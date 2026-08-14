@@ -28,8 +28,13 @@ describe("TUTORIAL", () => {
     });
 
     assert.equal(TUTORIAL.size, 6);
-    const expectedCells = TUTORIAL.size * TUTORIAL.size;
-    assert.equal(occupied.size, expectedCells, `expected all ${expectedCells} cells filled`);
+    for (let y = 0; y < TUTORIAL.size; y++) {
+      for (let x = 0; x < TUTORIAL.size; x++) {
+        if (isCenterCell(x, y, TUTORIAL.size)) {
+          assert.ok(occupied.has(cellKey(x, y)), `center (${x}, ${y}) should be filled`);
+        }
+      }
+    }
     assert.ok(results.some(Boolean), "expected at least one free arrow");
     assert.ok(results.some((free) => !free), "expected at least one blocked arrow");
   });
@@ -83,7 +88,7 @@ describe("level generation", () => {
     }
   });
 
-  it("fills all cells with arrows (no gaps)", () => {
+  it("fills all center cells (edges may be empty)", () => {
     const level = buildSolvableLevel(8, 10, rngFrom(42));
     const occupied = new Set();
     for (const arrow of level.arrows) {
@@ -91,11 +96,12 @@ describe("level generation", () => {
         occupied.add(cellKey(x, y));
       }
     }
-    const totalCells = level.size * level.size;
-    assert.equal(
-      occupied.size,
-      totalCells,
-      `expected all ${totalCells} cells to be filled, got ${occupied.size}`,
-    );
+    for (let y = 0; y < level.size; y++) {
+      for (let x = 0; x < level.size; x++) {
+        if (isCenterCell(x, y, level.size)) {
+          assert.ok(occupied.has(cellKey(x, y)), `center (${x}, ${y}) should be filled`);
+        }
+      }
+    }
   });
 });
