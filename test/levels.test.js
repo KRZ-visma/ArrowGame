@@ -434,6 +434,51 @@ describe("levelComplexity", () => {
     assert.equal(levelComplexity(small), levelComplexity(large));
   });
 
+  it("rates four different directions above ten arrows all the same way", () => {
+    const uniform = {
+      size: 10,
+      arrows: Array.from({ length: 10 }, (_, i) => ({
+        dir: "E",
+        path: [[0, i]],
+      })),
+    };
+    const mixed = {
+      size: 6,
+      arrows: [
+        { dir: "N", path: [[1, 1]] },
+        { dir: "E", path: [[2, 1]] },
+        { dir: "S", path: [[3, 1]] },
+        { dir: "W", path: [[4, 1]] },
+      ],
+    };
+    assert.ok(
+      levelComplexity(mixed) > levelComplexity(uniform),
+      `mixed ${levelComplexity(mixed)} should beat uniform ${levelComplexity(uniform)}`,
+    );
+  });
+
+  it("rates a split of directions above the same count all one way", () => {
+    const same = {
+      size: 6,
+      arrows: [
+        { dir: "E", path: [[0, 0]] },
+        { dir: "E", path: [[0, 1]] },
+        { dir: "E", path: [[0, 2]] },
+        { dir: "E", path: [[0, 3]] },
+      ],
+    };
+    const split = {
+      size: 6,
+      arrows: [
+        { dir: "E", path: [[0, 0]] },
+        { dir: "E", path: [[0, 1]] },
+        { dir: "W", path: [[5, 2]] },
+        { dir: "W", path: [[5, 3]] },
+      ],
+    };
+    assert.ok(levelComplexity(split) > levelComplexity(same));
+  });
+
   it("counts object-cell bends the same as tuple paths", () => {
     const tuples = {
       size: 5,

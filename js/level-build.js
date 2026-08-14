@@ -572,8 +572,33 @@ function clearanceProfile(size, arrows) {
 }
 
 /**
+ * How mixed exit directions are: unique dirs (1–4) and arrows off the dominant dir.
+ * Uniform boards score 0; four different dirs score high. Exit `dir` only — not bends.
+ *
+ * @param {Array<{ dir: string }>} arrows
+ */
+function directionSpread(arrows) {
+  const counts = { N: 0, E: 0, S: 0, W: 0 };
+  for (const arrow of arrows) {
+    if (counts[arrow.dir] !== undefined) counts[arrow.dir] += 1;
+  }
+  let uniqueDirs = 0;
+  let maxCount = 0;
+  for (const dir of ["N", "E", "S", "W"]) {
+    const c = counts[dir];
+    if (c > 0) uniqueDirs += 1;
+    if (c > maxCount) maxCount = c;
+  }
+  return {
+    uniqueDirs,
+    offDominant: arrows.length - maxCount,
+  };
+}
+
+/**
  * Integer difficulty score. Clearance structure leads (blocked openers, wave
- * count, depthSum); arrow count, occupancy, and bends are lighter tie-breakers.
+ * count, depthSum); direction spread is next (mixed exit dirs feel harder than
+ * a uniform flock); arrow count, occupancy, and bends are lighter tie-breakers.
  * Board size is not part of the score. Does not reorder the shipped pack.
  *
  * @param {{ size: number, arrows: Array<{ dir: string, path: Array }> }} level
@@ -589,10 +614,13 @@ export function levelComplexity(level) {
     bends += countBends(arrow.path);
   }
   const profile = clearanceProfile(size, arrows);
+  const spread = directionSpread(arrows);
   return (
     profile.blocked0 * 40 +
     profile.waves * 60 +
     profile.depthSum * 8 +
+    (spread.uniqueDirs - 1) * 30 +
+    spread.offDominant * 15 +
     arrows.length * 10 +
     cells * 2 +
     bends * 5
