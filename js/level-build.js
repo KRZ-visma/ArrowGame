@@ -572,8 +572,9 @@ function clearanceProfile(size, arrows) {
 }
 
 /**
- * Integer difficulty score. Board area dominates; blocked arrows, clearance
- * waves, occupancy, and winding snakes break ties so the pack can be ordered.
+ * Integer difficulty score. Clearance structure leads (blocked openers, wave
+ * count, depthSum); arrow count, occupancy, and bends are lighter tie-breakers.
+ * Board size is not part of the score. Does not reorder the shipped pack.
  *
  * @param {{ size: number, arrows: Array<{ dir: string, path: Array }> }} level
  */
@@ -589,19 +590,19 @@ export function levelComplexity(level) {
   }
   const profile = clearanceProfile(size, arrows);
   return (
-    size * size * 50 +
-    arrows.length * 20 +
-    profile.blocked0 * 15 +
-    profile.waves * 25 +
-    profile.depthSum * 2 +
-    cells * 3 +
-    bends * 8
+    profile.blocked0 * 40 +
+    profile.waves * 60 +
+    profile.depthSum * 8 +
+    arrows.length * 10 +
+    cells * 2 +
+    bends * 5
   );
 }
 
 /**
  * Pin the tutorial first, then sort the rest by nondecreasing `levelComplexity`.
- * Equal scores keep input order.
+ * Equal scores keep input order. Not used when baking `LEVEL_PACK` — pack order
+ * follows generation index.
  *
  * @param {Array<{ size: number, arrows: Array }>} levels
  */
