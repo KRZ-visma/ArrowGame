@@ -13,7 +13,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 - Strikes: 3 blocked taps (arrow cannot move) fail the run. Stars on a clear: 3 at par (arrow count), 2 at +1 tap, 1 otherwise — extras are blocked taps; each arrow leaves once so par is `arrows.length`
 - UI copy language: **English**
 - Unit tests: Node’s built-in test runner (`npm test` → `node --test test/`)
-- Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100). Every baked level must pass `isSolvable` (the generator repairs filler deadlocks; the script exits if a level is still stuck)
+- Levels ship as a static pack in `js/levels-data.js`; regenerate with `npm run generate-levels -- [count]` (default 100). Every baked level must pass `isSolvable` (the generator repairs filler deadlocks; the script exits if a level is still stuck). After generate, the pack is ordered by nondecreasing `levelComplexity` (tutorial first); `levelParamsForIndex` must not drop size or snake-count after the hand specs
 
 ## Files (by domain)
 
@@ -22,7 +22,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module |
 | Injected CSS + canvas UI / input | `game.js` | Brand, atmosphere, render, HUD (level + chances), end splash (win/fail + stars), All levels overlay, Menu overlay, pointer/keyboard |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` (greedy clear is enough — leaving only frees cells) — **unit tests** |
-| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places multi-cell puzzle arrows (tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer length 2, allow length 1; edges may stay empty); `repairToSolvable` then reorients leftover deadlocks (`fillEmptyCells` does not check escape, so two fillers can face each other); repair may reverse a snake (new tail can sit on an edge; at least one endpoint stays in the center); TUTORIAL is built via `buildTutorial()` for consistency — **unit tests** |
+| Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Static pack + build helpers; `buildSolvableLevel` places multi-cell puzzle arrows (tails in center zone) then `fillEmptyCells` fills remaining **center** cells (prefer length 2, allow length 1; edges may stay empty); `repairToSolvable` then reorients leftover deadlocks (`fillEmptyCells` does not check escape, so two fillers can face each other); repair may reverse a snake (new tail can sit on an edge; at least one endpoint stays in the center); TUTORIAL is built via `buildTutorial()` for consistency; pack order is `orderLevelsByComplexity` — **unit tests** |
 | Session progress / undo snapshots | `js/progress.js` | `localStorage` key helpers, undo JSON, `menuStats`, `clearAllProgress`, star records, skip quota (`MAX_SKIPS` / `skipLevel` / `canSkipLevel`), `starsForClear` / `MAX_STRIKES` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
@@ -104,3 +104,4 @@ When a pull request surfaces something future agents should know, add a small, c
 - Merge while required checks are failing or still running
 - Add Playwright/e2e UI tests by default — use **unit tests** for puzzle logic instead
 - Ship a `LEVEL_PACK` entry that `isSolvable` rejects — `fillEmptyCells` can deadlock (facing fillers); `repairToSolvable` must run after fill, and `generate-levels` must fail the run if a level stays stuck
+- Reset generated `size`/`count` after `HAND_LEVEL_SPECS` (the old `8 + (index - handCount) / 2` curve jumped back to 8×8, so level 13 was easier than 12). Continue from the last hand spec, then `orderLevelsByComplexity`
