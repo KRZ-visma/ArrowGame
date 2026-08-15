@@ -22,7 +22,7 @@
 - One Menu entry (**Beta levels**) loads `getBetaLevel(index)` from `js/beta-level.js` (`BETA_LEVELS`, cap `BETA_LEVEL_COUNT` = 3). Not in `LEVEL_PACK`; does not write stars, unlocks, skips, or `arrow-out-level`.
 - Sequence ramps like pack **milestones**, not consecutive early levels: Beta 1 ≈ tutorial, Beta 2 ≈ pack ~20, Beta 3 ≈ mid/late pack. Win advances 1→2→3; after 3, primary returns to the pack level you left. Restart replays the current beta board only.
 - Hand-author each board (swap `BETA_LEVELS` / bump `BETA_LEVEL_ID` when the experiment changes). **Do not** use `buildSolvableLevel` or other `level-build` generators — only assert `isSolvable`.
-- Document the experiment’s placement rules in the header comment of `js/beta-level.js` (v2 = axis-traffic three-step ramp: row/column flows instead of center→edge radial tips).
+- Document the experiment’s placement rules in the header comment of `js/beta-level.js` (v3 = axis-traffic three-step ramp with winding shapes: row/column flows instead of center→edge radial tips; boards must include bends / U-turns / curls that ramp like pack `minBends`, not all straight sticks).
 - Play wiring: `state.beta` + `state.betaIndex` in `js/play-session.js`; Menu / win-fail copy in `js/overlays.js`; load/restart/advance in `game.js`. Precache `./js/beta-level.js` in `sw.js`.
 
 ## Generator invariants
