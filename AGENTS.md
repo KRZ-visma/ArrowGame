@@ -32,6 +32,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Play session | `js/play-session.js` | Shared `state` + star records box for UI modules |
 | Escape / occupancy / move rules | `js/logic.js` | `canEscape`, `canEscapePath`, occupancy, `isSolvable` / `stuckArrows` — **unit tests** |
 | Level data & generation | `js/levels.js`, `js/level-build.js`, `js/levels-data.js` | Lane: `agents/levels.md` — **unit tests** |
+| Beta demo level | `js/beta-level.js` | Hand-authored; Menu-only; not scored — `agents/levels.md` — **unit tests** |
 | Session progress | `js/progress.js` | Lane: `agents/progress.md` — **unit tests** |
 | Deploy | `.github/workflows/deploy-pages.yml` | Stages `index.html`, `game.js`, `js/*`, `manifest.webmanifest`, `sw.js`, `icons/*`, `.nojekyll` |
 | CI unit tests | `.github/workflows/unit-tests.yml` | Runs `npm test` on push/PR |
@@ -73,6 +74,7 @@ Name the lane in the prompt and edit **only that lane’s files** (code + matchi
 | Play wiring | `game.js`, `js/play-session.js` | `agents/ui.md` (sparingly) |
 | Levels generator | `js/level-build.js`, `js/levels.js`, `scripts/generate-levels.js`, `test/levels.test.js` | `agents/levels.md` |
 | Pack bake | `js/levels-data.js` only when the PR owns the pack | `agents/levels.md` |
+| Beta demo board | `js/beta-level.js`, `test/beta-level.test.js` (Menu wiring may touch overlays / `game.js`) | `agents/levels.md` |
 | Progress / storage | `js/progress.js`, `test/progress.test.js` | `agents/progress.md` |
 | PWA / deploy assets | `sw.js`, `js/version.js`, `manifest.webmanifest`, `icons/*`, deploy workflow | `agents/pwa.md` |
 | Core contract | `AGENTS.md` | Rare — invariants, workflow gate, Files table rows |

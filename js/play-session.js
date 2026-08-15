@@ -21,6 +21,8 @@ export const TAP_SLOP_PX = 12;
 
 export const state = {
   levelIndex: 0,
+  /** When true, the board is the hand-authored beta demo — no stars / unlock / skip. */
+  beta: false,
   size: 8,
   arrows: /** @type {Arrow[]} */ ([]),
   moves: 0,

@@ -42,6 +42,7 @@ function collectEls() {
     livesEl: document.getElementById("lives"),
     btnCloseMenu: document.getElementById("btnCloseMenu"),
     btnAllLevels: document.getElementById("btnAllLevels"),
+    btnBetaLevel: document.getElementById("btnBetaLevel"),
     btnSkipLevel: document.getElementById("btnSkipLevel"),
     btnClearProgress: document.getElementById("btnClearProgress"),
     btnCancelClear: document.getElementById("btnCancelClear"),
@@ -58,6 +59,8 @@ let els = null;
 /**
  * @typedef {Object} OverlayHandlers
  * @property {(index: number) => void} startLevel
+ * @property {() => void} startBetaLevel
+ * @property {() => void} restartCurrent
  * @property {() => void} skipCurrentLevel
  * @property {() => void} onEndPrimary
  * @property {() => void} clearAllAndRestart
@@ -105,18 +108,32 @@ export function hideEndOverlay() {
 
 export function showWinSplash(starCount) {
   if (!els) return;
+  state.endMode = "win";
+  els.endCard.classList.remove("is-fail");
+  els.btnEndSkip.hidden = true;
+
+  if (state.beta) {
+    els.endKicker.textContent = "Beta";
+    els.endTitle.textContent = "Demo cleared";
+    els.endStars.hidden = true;
+    els.btnEndRetry.hidden = false;
+    els.btnEndRetry.textContent = "Play again";
+    els.endCopy.textContent = "Not saved to your progress.";
+    els.btnEndPrimary.textContent = `Back to Level ${state.levelIndex + 1}`;
+    els.endOverlay.hidden = false;
+    return;
+  }
+
   const next = nextLevelIndex(state.levelIndex, LEVEL_PACK.length);
   const nextNumber = next + 1;
   const last = state.levelIndex >= LEVEL_PACK.length - 1;
   const retry = canRetryForThreeStars(starCount);
-  state.endMode = "win";
-  els.endCard.classList.remove("is-fail");
   els.endKicker.textContent = "Cleared";
   els.endTitle.textContent = "Level complete";
   setEndStars(starCount);
   els.endStars.hidden = false;
-  els.btnEndSkip.hidden = true;
   els.btnEndRetry.hidden = !retry;
+  els.btnEndRetry.textContent = "Retry for 3 stars";
   els.endCopy.textContent = last
     ? "That's the last one in the pack."
     : "Every arrow found its way out.";
@@ -132,6 +149,7 @@ export function showFailSplash() {
   els.endTitle.textContent = "Out of chances";
   els.endStars.hidden = true;
   els.btnEndRetry.hidden = true;
+  els.btnEndRetry.textContent = "Retry for 3 stars";
   els.endCopy.textContent = "Three arrows could not move.";
   els.btnEndPrimary.textContent = "Restart";
   refreshSkipButtons();
@@ -140,6 +158,12 @@ export function showFailSplash() {
 
 export function refreshSkipButtons() {
   if (!els) return;
+  if (state.beta) {
+    els.btnSkipLevel.disabled = true;
+    els.btnSkipLevel.setAttribute("aria-label", "Skip is not available on the beta level");
+    els.btnEndSkip.hidden = true;
+    return;
+  }
   const allowed = canSkipLevel(stars.records, state.levelIndex);
   const left = skipsRemaining(stars.records);
   els.btnSkipLevel.disabled = !allowed;
@@ -166,12 +190,17 @@ function refreshMenuStats() {
     moves: state.moves,
     arrows: state.arrows,
     packSize: LEVEL_PACK.length,
-    won: state.won,
+    won: state.won && !state.beta,
     strikes: state.strikes,
     skipsLeft: skipsRemaining(stars.records),
   });
-  els.menuTitle.textContent = `Level ${stats.levelNumber}`;
-  els.statLevel.textContent = `${stats.levelNumber} / ${stats.packSize}`;
+  if (state.beta) {
+    els.menuTitle.textContent = "Beta level";
+    els.statLevel.textContent = "Beta";
+  } else {
+    els.menuTitle.textContent = `Level ${stats.levelNumber}`;
+    els.statLevel.textContent = `${stats.levelNumber} / ${stats.packSize}`;
+  }
   els.statMoves.textContent = String(stats.moves);
   els.statArrows.textContent = `${stats.arrowsRemaining} / ${stats.arrowsTotal}`;
   els.statChances.textContent = String(stats.chances);
@@ -179,6 +208,13 @@ function refreshMenuStats() {
   els.statSkips.textContent = String(stats.skipsLeft);
   if (els.menuVersion) {
     els.menuVersion.textContent = `Version ${menuVersionLabel()}`;
+  }
+  if (els.btnBetaLevel) {
+    els.btnBetaLevel.disabled = state.beta;
+    els.btnBetaLevel.setAttribute(
+      "aria-label",
+      state.beta ? "Already playing the beta level" : "Play the beta demo level",
+    );
   }
   refreshSkipButtons();
 }
@@ -264,7 +300,7 @@ function wireOverlayEvents() {
   if (!els || !handlers) return;
 
   els.btnEndPrimary.addEventListener("click", () => handlers.onEndPrimary());
-  els.btnEndRetry.addEventListener("click", () => handlers.startLevel(state.levelIndex));
+  els.btnEndRetry.addEventListener("click", () => handlers.restartCurrent());
   els.btnEndSkip.addEventListener("click", () => handlers.skipCurrentLevel());
   els.btnEndLevels.addEventListener("click", () => openLevels());
 
@@ -278,6 +314,12 @@ function wireOverlayEvents() {
   });
   els.btnCloseMenu.addEventListener("click", () => closeMenu());
   els.btnAllLevels.addEventListener("click", () => openLevels());
+  if (els.btnBetaLevel) {
+    els.btnBetaLevel.addEventListener("click", () => {
+      closeMenu();
+      handlers.startBetaLevel();
+    });
+  }
   els.btnSkipLevel.addEventListener("click", () => handlers.skipCurrentLevel());
   els.btnCloseLevels.addEventListener("click", () => closeLevels());
   els.btnClearProgress.addEventListener("click", () => showMenuConfirm(true));
@@ -304,7 +346,7 @@ function wireOverlayEvents() {
     }
     if (!els.menuOverlay.hidden || !els.levelsOverlay.hidden) return;
     if (e.key === "r" || e.key === "R") {
-      handlers.startLevel(state.levelIndex);
+      handlers.restartCurrent();
     } else if ((e.key === "n" || e.key === "N") && state.endMode === "win") {
       handlers.onEndPrimary();
     }

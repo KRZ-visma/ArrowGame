@@ -44,6 +44,7 @@ describe("UI module split", () => {
     for (const rel of UI_MODULES) {
       assert.match(sw, new RegExp(`"\\.\\/${rel.replace(/\//g, "\\/")}"`));
     }
+    assert.match(sw, /"\.\/js\/beta-level\.js"/);
     assert.match(sw, /CACHE_NAME = "arrow-out-__APP_VERSION__"/);
     assert.match(sw, /"\.\/js\/version\.js"/);
   });
