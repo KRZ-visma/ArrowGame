@@ -328,6 +328,19 @@ export function nextLevelIndex(levelIndex, packSize) {
 }
 
 /**
+ * Lowest pack index with fewer than 3 best stars, or -1 when every level is 3★.
+ * @param {{ best: Record<number, number> }} records
+ * @param {number} packSize
+ */
+export function firstLevelBelowThreeStars(records, packSize) {
+  const size = Math.max(0, Math.floor(Number(packSize) || 0));
+  for (let i = 0; i < size; i++) {
+    if (starsForLevel(records, i) < 3) return i;
+  }
+  return -1;
+}
+
+/**
  * @param {{ best: Record<number, number>, unlocked: number, skipped?: number[] }} records
  * @param {number} packSize
  */

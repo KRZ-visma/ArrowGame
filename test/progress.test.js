@@ -25,6 +25,7 @@ import {
   starsForLevel,
   isLevelUnlocked,
   nextLevelIndex,
+  firstLevelBelowThreeStars,
   levelSelectItems,
   MAX_SKIPS,
   normalizeSkipped,
@@ -377,6 +378,24 @@ describe("level skips", () => {
     assert.deepEqual(rec.skipped, [9]);
     assert.equal(rec.unlocked, 9);
     assert.equal(nextLevelIndex(9, 10), 0);
+  });
+
+  it("finds the first pack level below 3 stars", () => {
+    assert.equal(firstLevelBelowThreeStars(emptyStarRecords(), 3), 0);
+    assert.equal(
+      firstLevelBelowThreeStars({ best: { 0: 3, 1: 2, 2: 3 }, unlocked: 2 }, 3),
+      1,
+    );
+    assert.equal(
+      firstLevelBelowThreeStars({ best: { 0: 3, 1: 3, 2: 1 }, unlocked: 2 }, 3),
+      2,
+    );
+    assert.equal(
+      firstLevelBelowThreeStars({ best: { 0: 3, 1: 3, 2: 3 }, unlocked: 2 }, 3),
+      -1,
+    );
+    assert.equal(firstLevelBelowThreeStars({ best: { 0: 3 }, unlocked: 0 }, 0), -1);
+    assert.equal(firstLevelBelowThreeStars({ best: {}, unlocked: 0 }, NaN), -1);
   });
 
   it("marks skipped rows in level select", () => {

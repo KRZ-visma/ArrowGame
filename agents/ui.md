@@ -22,7 +22,7 @@ Edit this file for UI / canvas / overlay lessons. Prefer the matching code modul
 - **Functional UI names** — player-facing labels name what the action does (Restart, Skip, Clear), not jargon (Reset). Code ids may stay technical (`btnReset`); copy / `title` / `aria-label` use the functional name
 - **Skip quota (UI)** — Skip disabled on cleared or already-skipped levels, and when the quota is empty; finishing a skipped level restores a slot (logic in progress)
 - **Overlay copy** — one fact per line. Kicker, title, body, and buttons must not restate the same destination, outcome, or action. Primary button is the action; body is not a second CTA
-- **End splash** — win and fail share one overlay; do not auto-advance. Win shows stars + continue. A 1- or 2-star clear also offers retry-this-level on a button (not body copy); hide that retry on a 3-star win and on fail. Fail offers restart-this-level
+- **End splash** — win and fail share one overlay; do not auto-advance. Win shows stars + continue. A 1- or 2-star clear also offers retry-this-level on a button (not body copy); hide that retry on a 3-star win and on fail. Fail offers restart-this-level. On the **last** pack level win: hide Next when the pack is all 3★ (or the only under-3★ level is the one just cleared — Retry covers it); otherwise primary jumps to the first under-3★ level via `firstLevelBelowThreeStars` (label `Level N`, not wrap-to-1)
 - **All levels** — each cell shows three ★ `.level-pip` glyphs; earned ones need `.level-pip.filled` (accent color, not clip-path). Separate from `.star.filled` on the win splash
 - Tip paint must match crawl/exit `dir` (see core `AGENTS.md`)
 

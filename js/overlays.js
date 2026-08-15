@@ -6,6 +6,7 @@ import {
   menuStats,
   canRetryForThreeStars,
   nextLevelIndex,
+  firstLevelBelowThreeStars,
   levelSelectItems,
   canSkipLevel,
   skipsRemaining,
@@ -102,6 +103,7 @@ export function hideEndOverlay() {
   if (!els) return;
   els.endOverlay.hidden = true;
   state.endMode = null;
+  state.endPrimaryLevelIndex = null;
   els.endCard.classList.remove("is-fail");
   els.btnEndRetry.hidden = true;
 }
@@ -113,20 +115,21 @@ export function showWinSplash(starCount) {
   els.btnEndSkip.hidden = true;
 
   if (state.beta) {
+    state.endPrimaryLevelIndex = state.levelIndex;
     els.endKicker.textContent = "Beta";
     els.endTitle.textContent = "Demo cleared";
     els.endStars.hidden = true;
     els.btnEndRetry.hidden = false;
     els.btnEndRetry.textContent = "Play again";
+    els.btnEndPrimary.hidden = false;
     els.endCopy.textContent = "Not saved to your progress.";
     els.btnEndPrimary.textContent = `Back to Level ${state.levelIndex + 1}`;
     els.endOverlay.hidden = false;
     return;
   }
 
-  const next = nextLevelIndex(state.levelIndex, LEVEL_PACK.length);
-  const nextNumber = next + 1;
-  const last = state.levelIndex >= LEVEL_PACK.length - 1;
+  const packSize = LEVEL_PACK.length;
+  const last = state.levelIndex >= packSize - 1;
   const retry = canRetryForThreeStars(starCount);
   els.endKicker.textContent = "Cleared";
   els.endTitle.textContent = "Level complete";
@@ -134,22 +137,42 @@ export function showWinSplash(starCount) {
   els.endStars.hidden = false;
   els.btnEndRetry.hidden = !retry;
   els.btnEndRetry.textContent = "Retry for 3 stars";
-  els.endCopy.textContent = last
-    ? "That's the last one in the pack."
-    : "Every arrow found its way out.";
-  els.btnEndPrimary.textContent = `Next — Level ${nextNumber}`;
+
+  if (last) {
+    const improve = firstLevelBelowThreeStars(stars.records, packSize);
+    const showImprove = improve >= 0 && improve !== state.levelIndex;
+    state.endPrimaryLevelIndex = showImprove ? improve : null;
+    els.btnEndPrimary.hidden = !showImprove;
+    if (showImprove) {
+      els.btnEndPrimary.textContent = `Level ${improve + 1}`;
+    }
+    els.endCopy.textContent = showImprove
+      ? "Some levels still need 3 stars."
+      : improve >= 0
+        ? "That's the last one in the pack."
+        : "Every level in the pack is 3 stars.";
+  } else {
+    const next = nextLevelIndex(state.levelIndex, packSize);
+    state.endPrimaryLevelIndex = next;
+    els.btnEndPrimary.hidden = false;
+    els.btnEndPrimary.textContent = `Next — Level ${next + 1}`;
+    els.endCopy.textContent = "Every arrow found its way out.";
+  }
+
   els.endOverlay.hidden = false;
 }
 
 export function showFailSplash() {
   if (!els) return;
   state.endMode = "fail";
+  state.endPrimaryLevelIndex = state.levelIndex;
   els.endCard.classList.add("is-fail");
   els.endKicker.textContent = "Failed";
   els.endTitle.textContent = "Out of chances";
   els.endStars.hidden = true;
   els.btnEndRetry.hidden = true;
   els.btnEndRetry.textContent = "Retry for 3 stars";
+  els.btnEndPrimary.hidden = false;
   els.endCopy.textContent = "Three arrows could not move.";
   els.btnEndPrimary.textContent = "Restart";
   refreshSkipButtons();
@@ -347,7 +370,11 @@ function wireOverlayEvents() {
     if (!els.menuOverlay.hidden || !els.levelsOverlay.hidden) return;
     if (e.key === "r" || e.key === "R") {
       handlers.restartCurrent();
-    } else if ((e.key === "n" || e.key === "N") && state.endMode === "win") {
+    } else if (
+      (e.key === "n" || e.key === "N") &&
+      state.endMode === "win" &&
+      state.endPrimaryLevelIndex != null
+    ) {
       handlers.onEndPrimary();
     }
   });
