@@ -22,7 +22,7 @@ Browser-only arrow-escape puzzle: tap an arrow to slide it off the board in its 
 | Domain | File(s) | Notes / tests |
 | --- | --- | --- |
 | Shell / markup | `index.html` | `viewport-fit=cover`; loads `game.js` as a module; manifest + theme-color + apple-touch-icon; registers `./sw.js` |
-| PWA | `manifest.webmanifest`, `sw.js`, `icons/*` | Lane: `agents/pwa.md` — **unit tests** (`test/pwa.test.js`) |
+| PWA | `manifest.webmanifest`, `sw.js`, `js/version.js`, `icons/*` | Lane: `agents/pwa.md` — deploy stamps content hash into cache + Menu — **unit tests** (`test/pwa.test.js`) |
 | Play orchestration | `game.js` | Level load, moves/strikes/win-fail, wires UI modules |
 | UI shell / CSS | `js/ui-shell.js` | Injected CSS + DOM shell — lane: `agents/ui.md` |
 | Board view | `js/board-view.js` | Contain-fit default, zoom/pan, resize, screen↔board — lane: `agents/ui.md` |
@@ -74,7 +74,7 @@ Name the lane in the prompt and edit **only that lane’s files** (code + matchi
 | Levels generator | `js/level-build.js`, `js/levels.js`, `scripts/generate-levels.js`, `test/levels.test.js` | `agents/levels.md` |
 | Pack bake | `js/levels-data.js` only when the PR owns the pack | `agents/levels.md` |
 | Progress / storage | `js/progress.js`, `test/progress.test.js` | `agents/progress.md` |
-| PWA / deploy assets | `sw.js`, `manifest.webmanifest`, `icons/*`, deploy workflow | `agents/pwa.md` |
+| PWA / deploy assets | `sw.js`, `js/version.js`, `manifest.webmanifest`, `icons/*`, deploy workflow | `agents/pwa.md` |
 | Core contract | `AGENTS.md` | Rare — invariants, workflow gate, Files table rows |
 
 Do not put two agents on the same primary file. UI overlay work and board-view work can run in parallel; two overlay PRs should not.
@@ -88,7 +88,7 @@ Do not put two agents on the same primary file. UI overlay work and board-view w
 5. No secrets, analytics, or external APIs without asking
 6. Commits/PRs short and clear; UI copy always English
 7. Do not silently change the `localStorage` key or progress schema without a migration plan
-8. Split/rename shipped files → update deploy-pages + bump `CACHE_NAME` / PRECACHE in `sw.js` (see `agents/pwa.md`)
+8. Split/rename shipped files → update deploy-pages + PRECACHE in `sw.js` (version/cache id is stamped on deploy — see `agents/pwa.md`)
 9. Start/rebase PRs from recent `main` before merge; avoid parallel PRs that share a primary file
 10. Mark the PR **ready for review** when ready; wait for required checks
 11. **Update agent instructions when the PR teaches something new** — prefer the **lane file** in `agents/`; touch `AGENTS.md` only for core contract / Files table / workflow

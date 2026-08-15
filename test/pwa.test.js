@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { APP_VERSION, menuVersionLabel } from "../js/version.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -40,6 +41,7 @@ describe("PWA shell", () => {
     assert.ok(urls.includes("./index.html"));
     assert.ok(urls.includes("./game.js"));
     assert.ok(urls.includes("./manifest.webmanifest"));
+    assert.ok(urls.includes("./js/version.js"));
     for (const url of urls) {
       assert.match(url, /^\.\//);
       if (url === "./") continue;
@@ -65,5 +67,32 @@ describe("PWA shell", () => {
     assert.match(yml, /\bsw\.js\b/);
     assert.match(yml, /_site\/icons/);
     assert.match(yml, /cp icons\/\* _site\/icons\//);
+  });
+
+  it("version token is shared by sw cache name and Menu helper", () => {
+    assert.equal(APP_VERSION, "__APP_VERSION__");
+    assert.equal(menuVersionLabel(), "dev");
+    assert.equal(menuVersionLabel("a1b2c3d4"), "a1b2c3d4");
+    const sw = readFileSync(join(root, "sw.js"), "utf8");
+    assert.match(sw, /CACHE_NAME = "arrow-out-__APP_VERSION__"/);
+    const versionSrc = readFileSync(join(root, "js/version.js"), "utf8");
+    assert.match(versionSrc, /export const APP_VERSION = "__APP_VERSION__"/);
+  });
+
+  it("Menu shell shows a version footer", () => {
+    const shell = readFileSync(join(root, "js/ui-shell.js"), "utf8");
+    assert.match(shell, /id="menuVersion"/);
+    assert.match(shell, /menu-version/);
+    const overlays = readFileSync(join(root, "js/overlays.js"), "utf8");
+    assert.match(overlays, /menuVersionLabel/);
+  });
+
+  it("deploy stamps content hash via scripts/stamp-app-version.js", () => {
+    const yml = readFileSync(
+      join(root, ".github/workflows/deploy-pages.yml"),
+      "utf8",
+    );
+    assert.match(yml, /stamp-app-version\.js/);
+    assert.match(yml, /node scripts\/stamp-app-version\.js _site/);
   });
 });

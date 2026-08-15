@@ -33,6 +33,7 @@ jobs:
           cp index.html game.js .nojekyll manifest.webmanifest sw.js _site/
           cp js/*.js _site/js/
           cp icons/* _site/icons/
+          node scripts/stamp-app-version.js _site
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
