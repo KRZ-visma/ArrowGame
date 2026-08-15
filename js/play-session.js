@@ -23,6 +23,8 @@ export const state = {
   levelIndex: 0,
   /** When true, the board is the hand-authored beta demo — no stars / unlock / skip. */
   beta: false,
+  /** Index into the beta sequence while `beta` is true (`0 .. BETA_LEVEL_COUNT-1`). */
+  betaIndex: 0,
   size: 8,
   arrows: /** @type {Arrow[]} */ ([]),
   moves: 0,

@@ -4,7 +4,7 @@ import {
   DELTA,
 } from "./js/logic.js";
 import { getLevelData, LEVEL_PACK } from "./js/levels.js";
-import { getBetaLevel } from "./js/beta-level.js";
+import { BETA_LEVEL_COUNT, getBetaLevel } from "./js/beta-level.js";
 import {
   STORAGE_KEY,
   STARS_KEY,
@@ -108,6 +108,7 @@ function hydrateLevel(level) {
 
 function startLevel(index) {
   state.beta = false;
+  state.betaIndex = 0;
   state.levelIndex = Math.max(0, index);
   stars.records = withUnlocked(stars.records, state.levelIndex);
   saveStars();
@@ -115,14 +116,16 @@ function startLevel(index) {
   hydrateLevel(structuredClone(getLevelData(state.levelIndex)));
 }
 
-function startBetaLevel() {
+/** @param {number} [index=0] */
+function startBetaLevel(index = 0) {
   state.beta = true;
+  state.betaIndex = Math.max(0, Math.min(BETA_LEVEL_COUNT - 1, Math.floor(index)));
   // Keep levelIndex as the pack resume point; do not write progress keys.
-  hydrateLevel(getBetaLevel());
+  hydrateLevel(getBetaLevel(state.betaIndex));
 }
 
 function restartCurrent() {
-  if (state.beta) startBetaLevel();
+  if (state.beta) startBetaLevel(state.betaIndex);
   else startLevel(state.levelIndex);
 }
 
@@ -142,6 +145,10 @@ function onEndPrimary() {
     return;
   }
   if (state.beta) {
+    if (state.betaIndex < BETA_LEVEL_COUNT - 1) {
+      startBetaLevel(state.betaIndex + 1);
+      return;
+    }
     startLevel(state.levelIndex);
     return;
   }

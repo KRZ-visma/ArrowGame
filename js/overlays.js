@@ -1,6 +1,7 @@
 /** End splash, Menu, and All levels overlays. */
 
 import { LEVEL_PACK } from "./levels.js";
+import { BETA_LEVEL_COUNT } from "./beta-level.js";
 import {
   MAX_STRIKES,
   menuStats,
@@ -60,7 +61,7 @@ let els = null;
 /**
  * @typedef {Object} OverlayHandlers
  * @property {(index: number) => void} startLevel
- * @property {() => void} startBetaLevel
+ * @property {(index?: number) => void} startBetaLevel
  * @property {() => void} restartCurrent
  * @property {() => void} skipCurrentLevel
  * @property {() => void} onEndPrimary
@@ -115,15 +116,20 @@ export function showWinSplash(starCount) {
   els.btnEndSkip.hidden = true;
 
   if (state.beta) {
+    const n = state.betaIndex + 1;
+    const last = state.betaIndex >= BETA_LEVEL_COUNT - 1;
+    // Non-null so win-splash N still fires; game.js beta branch advances / resumes pack.
     state.endPrimaryLevelIndex = state.levelIndex;
     els.endKicker.textContent = "Beta";
-    els.endTitle.textContent = "Demo cleared";
+    els.endTitle.textContent = `Beta ${n} cleared`;
     els.endStars.hidden = true;
     els.btnEndRetry.hidden = false;
     els.btnEndRetry.textContent = "Play again";
     els.btnEndPrimary.hidden = false;
     els.endCopy.textContent = "Not saved to your progress.";
-    els.btnEndPrimary.textContent = `Back to Level ${state.levelIndex + 1}`;
+    els.btnEndPrimary.textContent = last
+      ? `Back to Level ${state.levelIndex + 1}`
+      : `Next — Beta ${n + 1}`;
     els.endOverlay.hidden = false;
     return;
   }
@@ -183,7 +189,7 @@ export function refreshSkipButtons() {
   if (!els) return;
   if (state.beta) {
     els.btnSkipLevel.disabled = true;
-    els.btnSkipLevel.setAttribute("aria-label", "Skip is not available on the beta level");
+    els.btnSkipLevel.setAttribute("aria-label", "Skip is not available on beta levels");
     els.btnEndSkip.hidden = true;
     return;
   }
@@ -218,8 +224,9 @@ function refreshMenuStats() {
     skipsLeft: skipsRemaining(stars.records),
   });
   if (state.beta) {
-    els.menuTitle.textContent = "Beta level";
-    els.statLevel.textContent = "Beta";
+    const n = state.betaIndex + 1;
+    els.menuTitle.textContent = `Beta ${n}`;
+    els.statLevel.textContent = `Beta ${n} / ${BETA_LEVEL_COUNT}`;
   } else {
     els.menuTitle.textContent = `Level ${stats.levelNumber}`;
     els.statLevel.textContent = `${stats.levelNumber} / ${stats.packSize}`;
@@ -236,7 +243,7 @@ function refreshMenuStats() {
     els.btnBetaLevel.disabled = state.beta;
     els.btnBetaLevel.setAttribute(
       "aria-label",
-      state.beta ? "Already playing the beta level" : "Play the beta demo level",
+      state.beta ? "Already playing the beta levels" : "Play the beta demo levels",
     );
   }
   refreshSkipButtons();
@@ -340,7 +347,7 @@ function wireOverlayEvents() {
   if (els.btnBetaLevel) {
     els.btnBetaLevel.addEventListener("click", () => {
       closeMenu();
-      handlers.startBetaLevel();
+      handlers.startBetaLevel(0);
     });
   }
   els.btnSkipLevel.addEventListener("click", () => handlers.skipCurrentLevel());
