@@ -10,7 +10,7 @@ import {
   BETA_LEVELS,
   getBetaLevel,
 } from "../js/beta-level.js";
-import { cellKey, dirBetween, isSolvable } from "../js/logic.js";
+import { cellKey, countPathTurns, dirBetween, isSolvable, pathHasReversal } from "../js/logic.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -21,9 +21,16 @@ const RAMP = [
   { minSize: 16, maxSize: 16, minArrows: 28, maxArrows: 48 },
 ];
 
+/** Winding-shape floors mirroring pack minBends growth (tutorial → ~20 → mid/late). */
+const SHAPE_RAMP = [
+  { minBent: 1, minCurl: 0, minReversal: 1 },
+  { minBent: 4, minCurl: 4, minReversal: 3 },
+  { minBent: 4, minCurl: 8, minReversal: 4 },
+];
+
 describe("beta levels", () => {
   it("exports a three-board sequence with a stable id", () => {
-    assert.equal(BETA_LEVEL_ID, "axis-traffic-v2");
+    assert.equal(BETA_LEVEL_ID, "axis-traffic-v3");
     assert.equal(BETA_LEVEL_COUNT, 3);
     assert.equal(BETA_LEVELS.length, BETA_LEVEL_COUNT);
     assert.deepEqual(BETA_LEVEL, BETA_LEVELS[0]);
@@ -56,6 +63,29 @@ describe("beta levels", () => {
     assert.ok(BETA_LEVELS[2].arrows.length >= BETA_LEVELS[1].arrows.length);
   });
 
+  it("ramps bends, curls, and U-turn reversals like pack winding shapes", () => {
+    for (let i = 0; i < BETA_LEVEL_COUNT; i++) {
+      const level = BETA_LEVELS[i];
+      const floor = SHAPE_RAMP[i];
+      let bent = 0;
+      let curl = 0;
+      let reversal = 0;
+      for (const arrow of level.arrows) {
+        const turns = countPathTurns(arrow.path);
+        if (turns === 1) bent += 1;
+        if (turns >= 2) curl += 1;
+        if (pathHasReversal(arrow.path)) reversal += 1;
+      }
+      assert.ok(bent >= floor.minBent, `beta ${i + 1} bent count ${bent}`);
+      assert.ok(curl >= floor.minCurl, `beta ${i + 1} curl count ${curl}`);
+      assert.ok(reversal >= floor.minReversal, `beta ${i + 1} reversal count ${reversal}`);
+    }
+    const turns = (idx) =>
+      BETA_LEVELS[idx].arrows.reduce((n, a) => n + countPathTurns(a.path), 0);
+    assert.ok(turns(1) > turns(0), "beta 2 has more total bends than beta 1");
+    assert.ok(turns(2) >= turns(1), "beta 3 has at least as many total bends as beta 2");
+  });
+
   for (let i = 0; i < BETA_LEVEL_COUNT; i++) {
     it(`beta ${i + 1}: no overlaps, tip matches crawl dir, isSolvable`, () => {
       const level = BETA_LEVELS[i];
@@ -79,7 +109,7 @@ describe("beta levels", () => {
     });
   }
 
-  it("documents axis traffic and does not import the pack generator", () => {
+  it("documents axis traffic + winding shapes and does not import the pack generator", () => {
     const src = readFileSync(join(root, "js/beta-level.js"), "utf8");
     assert.doesNotMatch(src, /^import\b/m);
     assert.doesNotMatch(src, /from\s+["'].*level-build/);
@@ -87,5 +117,8 @@ describe("beta levels", () => {
     assert.match(src, /axis traffic/i);
     assert.match(src, /Beta 2/i);
     assert.match(src, /pack ~20|level 20/i);
+    assert.match(src, /[Uu]-?turn/);
+    assert.match(src, /[Cc]url/);
+    assert.match(src, /[Bb]end/);
   });
 });
