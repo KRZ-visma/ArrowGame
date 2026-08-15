@@ -7,14 +7,22 @@
 | Pack accessors | `js/levels.js` |
 | Build / repair / complexity | `js/level-build.js` |
 | Baked static pack | `js/levels-data.js` |
+| Hand-authored beta demo (single board) | `js/beta-level.js` |
 | Generator CLI | `scripts/generate-levels.js` |
-| Tests | `test/levels.test.js` (and logic tests when escape rules change) |
+| Tests | `test/levels.test.js`, `test/beta-level.test.js` (and logic tests when escape rules change) |
 
 ## Pack ownership
 
 - **Do not rewrite `js/levels-data.js` unless this PR’s job is baking/shipping the pack.** Generator, solvability, complexity, or growth changes belong in `level-build` / `levels.js` / tests / `scripts/generate-levels.js` only.
 - When the pack must update, prefer a **dedicated pack-bake PR** (or clearly own the pack in the same PR) so parallel levels-logic work does not collide on a 60k-line blob.
 - Regenerate with `npm run generate-levels -- [count]` (default 100). Every baked level must pass `isSolvable` (generator repairs filler deadlocks; script exits if still stuck).
+
+## Beta demo level
+
+- One Menu entry (**Beta level**) loads `getBetaLevel()` from `js/beta-level.js`. Not in `LEVEL_PACK`; does not write stars, unlocks, skips, or `arrow-out-level`.
+- Hand-author the board (swap `BETA_LEVEL` / bump `BETA_LEVEL_ID` when the experiment changes). **Do not** use `buildSolvableLevel` or other `level-build` generators — only assert `isSolvable`.
+- Document the experiment’s placement rules in the header comment of `js/beta-level.js` (v1 = axis traffic: row/column flows instead of center→edge radial tips).
+- Play wiring: `state.beta` in `js/play-session.js`; Menu / win-fail copy in `js/overlays.js`; load/restart in `game.js`. Precache `./js/beta-level.js` in `sw.js`.
 
 ## Generator invariants
 

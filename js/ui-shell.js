@@ -684,6 +684,7 @@ export function buildUI() {
           </dl>
           <div class="menu-actions">
             <button type="button" class="btn" id="btnAllLevels">All levels</button>
+            <button type="button" class="btn" id="btnBetaLevel">Beta level</button>
             <button type="button" class="btn" id="btnSkipLevel">Skip this level</button>
             <button type="button" class="btn" id="btnCloseMenu">Close</button>
             <button type="button" class="btn btn-danger" id="btnClearProgress">Clear all progress</button>

@@ -4,6 +4,7 @@ import {
   DELTA,
 } from "./js/logic.js";
 import { getLevelData, LEVEL_PACK } from "./js/levels.js";
+import { getBetaLevel } from "./js/beta-level.js";
 import {
   STORAGE_KEY,
   STARS_KEY,
@@ -106,6 +107,7 @@ function hydrateLevel(level) {
 }
 
 function startLevel(index) {
+  state.beta = false;
   state.levelIndex = Math.max(0, index);
   stars.records = withUnlocked(stars.records, state.levelIndex);
   saveStars();
@@ -113,7 +115,19 @@ function startLevel(index) {
   hydrateLevel(structuredClone(getLevelData(state.levelIndex)));
 }
 
+function startBetaLevel() {
+  state.beta = true;
+  // Keep levelIndex as the pack resume point; do not write progress keys.
+  hydrateLevel(getBetaLevel());
+}
+
+function restartCurrent() {
+  if (state.beta) startBetaLevel();
+  else startLevel(state.levelIndex);
+}
+
 function skipCurrentLevel() {
+  if (state.beta) return;
   if (!canSkipLevel(stars.records, state.levelIndex)) return;
   const next = nextLevelIndex(state.levelIndex, LEVEL_PACK.length);
   stars.records = skipLevel(stars.records, state.levelIndex, LEVEL_PACK.length);
@@ -124,6 +138,10 @@ function skipCurrentLevel() {
 
 function onEndPrimary() {
   if (state.endMode === "fail") {
+    restartCurrent();
+    return;
+  }
+  if (state.beta) {
     startLevel(state.levelIndex);
     return;
   }
@@ -144,6 +162,8 @@ function clearAllAndRestart() {
 
 bindOverlays({
   startLevel,
+  startBetaLevel,
+  restartCurrent,
   skipCurrentLevel,
   onEndPrimary,
   clearAllAndRestart,
@@ -228,6 +248,10 @@ function checkWin() {
   if (state.won || state.failed) return;
   if (state.arrows.every((a) => a.state === "gone")) {
     state.won = true;
+    if (state.beta) {
+      showWinSplash(0);
+      return;
+    }
     const minMoves = minMovesForArrows(state.arrows);
     const starCount = starsForClear(minMoves, state.moves + state.strikes);
     stars.records = recordLevelStars(stars.records, state.levelIndex, starCount);
@@ -238,7 +262,7 @@ function checkWin() {
 
 bindPointerInput(canvas, { tryMove });
 
-btnReset.addEventListener("click", () => startLevel(state.levelIndex));
+btnReset.addEventListener("click", () => restartCurrent());
 
 window.addEventListener("resize", () => resize());
 if (window.visualViewport) {
