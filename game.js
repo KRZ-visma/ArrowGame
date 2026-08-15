@@ -152,7 +152,8 @@ function onEndPrimary() {
     startLevel(state.levelIndex);
     return;
   }
-  startLevel(nextLevelIndex(state.levelIndex, LEVEL_PACK.length));
+  if (state.endPrimaryLevelIndex == null) return;
+  startLevel(state.endPrimaryLevelIndex);
 }
 
 function clearAllAndRestart() {

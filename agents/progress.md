@@ -25,6 +25,7 @@
 
 - 3 blocked taps (arrow cannot move) fail the run (`MAX_STRIKES`)
 - Stars on a clear: 3 at par (arrow count), 2 at +1 tap, 1 otherwise — extras are blocked taps; each arrow leaves once so par is `arrows.length`
+- `firstLevelBelowThreeStars(records, packSize)` — lowest index with best < 3, or `-1` when the pack is all 3★ (last-level win splash)
 
 ## Skip quota
 

@@ -43,6 +43,8 @@ export const state = {
   won: false,
   failed: false,
   endMode: /** @type {'win' | 'fail' | null} */ (null),
+  /** Win-splash primary target; null when the button is hidden. */
+  endPrimaryLevelIndex: /** @type {number | null} */ (null),
 };
 
 /** @type {{ best: Record<number, number>, unlocked: number, skipped: number[] }} */
