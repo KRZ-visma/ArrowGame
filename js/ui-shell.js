@@ -349,6 +349,16 @@ body {
   gap: 0.55rem;
 }
 
+.menu-version {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .menu-actions .btn {
   width: 100%;
 }
@@ -678,6 +688,7 @@ export function buildUI() {
             <button type="button" class="btn" id="btnCloseMenu">Close</button>
             <button type="button" class="btn btn-danger" id="btnClearProgress">Clear all progress</button>
           </div>
+          <p class="menu-version" id="menuVersion">Version dev</p>
         </div>
         <div id="menuConfirm" hidden>
           <p class="overlay-kicker">Start over</p>

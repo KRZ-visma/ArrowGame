@@ -11,6 +11,7 @@ import {
   skipsRemaining,
 } from "./progress.js";
 import { state, stars } from "./play-session.js";
+import { menuVersionLabel } from "./version.js";
 
 /** @typedef {ReturnType<typeof collectEls>} OverlayEls */
 
@@ -37,6 +38,7 @@ function collectEls() {
     statChances: document.getElementById("statChances"),
     statCleared: document.getElementById("statCleared"),
     statSkips: document.getElementById("statSkips"),
+    menuVersion: document.getElementById("menuVersion"),
     livesEl: document.getElementById("lives"),
     btnCloseMenu: document.getElementById("btnCloseMenu"),
     btnAllLevels: document.getElementById("btnAllLevels"),
@@ -175,6 +177,9 @@ function refreshMenuStats() {
   els.statChances.textContent = String(stats.chances);
   els.statCleared.textContent = String(stats.levelsCleared);
   els.statSkips.textContent = String(stats.skipsLeft);
+  if (els.menuVersion) {
+    els.menuVersion.textContent = `Version ${menuVersionLabel()}`;
+  }
   refreshSkipButtons();
 }
 
