@@ -43,7 +43,9 @@ describe("beta level", () => {
   it("passes isSolvable and does not import the pack generator", () => {
     assert.equal(isSolvable(BETA_LEVEL.size, BETA_LEVEL.arrows), true);
     const src = readFileSync(join(root, "js/beta-level.js"), "utf8");
-    assert.doesNotMatch(src, /level-build|buildSolvableLevel|growWindingPath|LEVEL_PACK/);
+    assert.doesNotMatch(src, /^import\b/m);
+    assert.doesNotMatch(src, /from\s+["'].*level-build/);
+    assert.doesNotMatch(src, /from\s+["'].*levels-data/);
     assert.match(src, /axis traffic/i);
   });
 });
